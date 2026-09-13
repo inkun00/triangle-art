@@ -206,6 +206,8 @@ func _on_scale_lock_pressed() -> void:
 	scale_lock_toggled.emit(scale_lock_active)
 
 func _update_scale_lock_ui() -> void:
+	if not btn_scale_lock:
+		return
 	if scale_lock_active:
 		btn_scale_lock.text = "● 비율: 고정"
 		btn_scale_lock.add_theme_stylebox_override("normal", style_active_lock)

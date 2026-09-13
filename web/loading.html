@@ -405,7 +405,8 @@ window.triangleArtReady = function() {
 	function fail(err) {
 		console.error("Engine failure:", err);
 		stage.textContent = '게임을 불러오지 못했습니다.';
-		errorMsg.textContent = '리소스를 다운로드하는 중 오류가 발생했습니다.\n인터넷 연결을 확인하시고 [다시 불러오기]를 눌러주세요.';
+		const detail = (err && (err.message || err.toString())) ? String(err.message || err) : '';
+		errorMsg.textContent = detail ? ('오류 상세: ' + detail + '\n[다시 불러오기]를 눌러주세요.') : '리소스를 다운로드하는 중 오류가 발생했습니다.\n인터넷 연결을 확인하시고 [다시 불러오기]를 눌러주세요.';
 		errorMsg.hidden = false;
 		retryBtn.hidden = false;
 	}

@@ -100,14 +100,9 @@ func _ready() -> void:
 	custom_minimum_size = Vector2(200, 200)
 	mouse_filter = Control.MOUSE_FILTER_PASS
 	_setup_context_menu()
-	resized.connect(_on_canvas_resized)
 	await get_tree().process_frame
 	fit_canvas_in_view()
 	queue_redraw()
-
-func _on_canvas_resized() -> void:
-	center_canvas_in_view()
-	_apply_zoom_and_pan()
 
 func fit_canvas_in_view(margin: float = 30.0) -> void:
 	if size.x > 0 and size.y > 0:
