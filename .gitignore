@@ -1,0 +1,18 @@
+# Godot-specific ignores
+.godot/
+*.translation
+
+# Vercel & Node
+.vercel/
+node_modules/
+
+# OS and Editor
+.DS_Store
+Thumbs.db
+*.tmp
+*.log
+
+# Workspace temporary debug dumps
+conversation_dump.md
+decoded_conversation.json
+dict_messages.json

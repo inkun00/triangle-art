@@ -1,0 +1,33 @@
+import http.server
+import socketserver
+import os
+import sys
+
+PORT = 8080
+DIRECTORY = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "build", "web"))
+
+class CustomHandler(http.server.SimpleHTTPRequestHandler):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, directory=DIRECTORY, **kwargs)
+
+    def end_headers(self):
+        self.send_header("Cross-Origin-Opener-Policy", "same-origin")
+        self.send_header("Cross-Origin-Embedder-Policy", "require-corp")
+        self.send_header("Access-Control-Allow-Origin", "*")
+        super().end_headers()
+
+    def guess_type(self, path):
+        if path.endswith(".wasm"):
+            return "application/wasm"
+        if path.endswith(".pck"):
+            return "application/octet-stream"
+        return super().guess_type(path)
+
+socketserver.TCPServer.allow_reuse_address = True
+print(f"Starting server at http://localhost:{PORT} from {DIRECTORY}", flush=True)
+
+try:
+    with socketserver.TCPServer(("", PORT), CustomHandler) as httpd:
+        httpd.serve_forever()
+except Exception as e:
+    print(f"Error running server: {e}", file=sys.stderr, flush=True)
