@@ -97,13 +97,31 @@ var last_right_click_pos: Vector2 = Vector2.ZERO
 @onready var container: Node2D = $TrianglesContainer
 
 func _ready() -> void:
-	custom_minimum_size = Vector2(800, 600)
+	custom_minimum_size = Vector2(200, 200)
 	mouse_filter = Control.MOUSE_FILTER_PASS
 	_setup_context_menu()
+	resized.connect(_on_canvas_resized)
 	await get_tree().process_frame
+	fit_canvas_in_view()
+	queue_redraw()
+
+func _on_canvas_resized() -> void:
 	center_canvas_in_view()
 	_apply_zoom_and_pan()
-	queue_redraw()
+
+func fit_canvas_in_view(margin: float = 30.0) -> void:
+	if size.x > 0 and size.y > 0:
+		var avail_w: float = maxf(size.x - margin * 2.0, 100.0)
+		var avail_h: float = maxf(size.y - margin * 2.0, 100.0)
+		var fit_zoom_x: float = avail_w / canvas_size.x
+		var fit_zoom_y: float = avail_h / canvas_size.y
+		var ideal_zoom: float = minf(fit_zoom_x, fit_zoom_y)
+		zoom_level = clampf(minf(ideal_zoom, 1.0), min_zoom, max_zoom)
+		center_canvas_in_view()
+		_apply_zoom_and_pan()
+	else:
+		center_canvas_in_view()
+		_apply_zoom_and_pan()
 
 func set_canvas_size(new_size: Vector2) -> void:
 	var clamped_size: Vector2 = Vector2(
@@ -113,8 +131,10 @@ func set_canvas_size(new_size: Vector2) -> void:
 	if canvas_size != clamped_size:
 		canvas_size = clamped_size
 		canvas_size_changed.emit(canvas_size)
-		center_canvas_in_view()
-		_apply_zoom_and_pan()
+		if show_guide and not active_guide_name.is_empty():
+			var center: Vector2 = canvas_size / 2.0
+			guide_triangles = TriangleTemplates.get_template_data(active_guide_name, center)
+		fit_canvas_in_view()
 		queue_redraw()
 
 func center_canvas_in_view() -> void:
@@ -139,9 +159,7 @@ func set_zoom(new_zoom: float, pivot_canvas_pos: Vector2 = Vector2.ZERO) -> void
 	_apply_zoom_and_pan()
 
 func reset_zoom() -> void:
-	zoom_level = 1.0
-	center_canvas_in_view()
-	_apply_zoom_and_pan()
+	fit_canvas_in_view()
 
 func _apply_zoom_and_pan() -> void:
 	if container:
