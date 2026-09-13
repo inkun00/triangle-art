@@ -32,6 +32,8 @@ enum MenuAction {
 	FLIP_V = 8,
 	LAYER_UP = 9,
 	LAYER_DOWN = 10,
+	LAYER_FRONT = 15,
+	LAYER_BACK = 16,
 	SCALE_UP = 11,
 	SCALE_DOWN = 12,
 	TOGGLE_SCALE_LOCK = 13,
@@ -90,6 +92,15 @@ var drag_multi_start_mouse: Vector2 = Vector2.ZERO
 var drag_multi_start_verts: Dictionary = {}
 var drag_multi_start_centroids: Dictionary = {}
 var current_group_rotation_deg: float = 0.0
+
+var is_dragging_group_scale: bool = false
+var drag_group_scale_corner_idx: int = -1
+var drag_group_scale_start_dist: float = 1.0
+var drag_group_scale_start_mouse: Vector2 = Vector2.ZERO
+var drag_group_scale_center: Vector2 = Vector2.ZERO
+var drag_group_scale_start_positions: Dictionary = {}
+var drag_group_scale_start_verts: Dictionary = {}
+var current_group_scale_factor: float = 1.0
 
 var context_menu: PopupMenu = null
 var last_right_click_pos: Vector2 = Vector2.ZERO
@@ -353,6 +364,45 @@ func _start_group_rotation_drag(world_pos: Vector2) -> void:
 			drag_multi_start_verts[t] = [t.vertex_a, t.vertex_b, t.vertex_c]
 			drag_multi_start_centroids[t] = t.get_centroid()
 
+func get_group_scale_corner_positions() -> Array[Vector2]:
+	var bbox: Rect2 = get_group_bounding_box()
+	if bbox.size.x <= 0.0 and bbox.size.y <= 0.0:
+		return []
+	var pad: float = 8.0 / zoom_level
+	var p_min: Vector2 = bbox.position - Vector2(pad, pad)
+	var p_max: Vector2 = bbox.position + bbox.size + Vector2(pad, pad)
+	return [
+		p_min,
+		Vector2(p_max.x, p_min.y),
+		Vector2(p_min.x, p_max.y),
+		p_max
+	]
+
+func hit_test_group_scale_handle(world_point: Vector2) -> int:
+	if selected_triangles.size() <= 1:
+		return -1
+	var corners: Array[Vector2] = get_group_scale_corner_positions()
+	var hit_rad: float = 14.0 / zoom_level
+	for i in range(corners.size()):
+		if world_point.distance_to(corners[i]) <= hit_rad:
+			return i
+	return -1
+
+func _start_group_scale_drag(world_pos: Vector2, corner_idx: int) -> void:
+	is_dragging_group_scale = true
+	drag_group_scale_corner_idx = corner_idx
+	drag_group_scale_center = get_group_center()
+	drag_group_scale_start_mouse = world_pos
+	drag_group_scale_start_dist = maxf(world_pos.distance_to(drag_group_scale_center), 10.0)
+	current_group_scale_factor = 1.0
+	drag_group_scale_start_positions.clear()
+	drag_group_scale_start_verts.clear()
+
+	for t in selected_triangles:
+		if is_instance_valid(t):
+			drag_group_scale_start_positions[t] = t.position
+			drag_group_scale_start_verts[t] = [t.vertex_a, t.vertex_b, t.vertex_c]
+
 func group_selected() -> void:
 	if selected_triangles.size() < 2:
 		return
@@ -486,24 +536,182 @@ func set_selected_outline_color(col: Color, saved_old_colors: Dictionary = {}) -
 func remove_selected_outline() -> void:
 	set_selected_outline_color(Color(0, 0, 0, 0))
 
+func _get_selected_layer_targets() -> Array[TriangleNode]:
+	var targets: Array[TriangleNode] = []
+	if selected_triangles.size() > 1:
+		targets = selected_triangles.duplicate()
+	elif selected_triangle and is_instance_valid(selected_triangle):
+		if not selected_triangle.group_id.is_empty():
+			for t in triangles:
+				if is_instance_valid(t) and t.group_id == selected_triangle.group_id:
+					targets.append(t)
+		else:
+			targets.append(selected_triangle)
+	return targets
+
+func _build_children_entities(children: Array) -> Array:
+	var entities: Array = []
+	var visited_groups: Dictionary = {}
+	for c in children:
+		if not (c is TriangleNode):
+			continue
+		if not c.group_id.is_empty():
+			if visited_groups.has(c.group_id):
+				continue
+			visited_groups[c.group_id] = true
+			var grp: Array = []
+			for other in children:
+				if other is TriangleNode and other.group_id == c.group_id:
+					grp.append(other)
+			entities.append(grp)
+		else:
+			entities.append([c])
+	return entities
+
 func bring_forward() -> void:
-	if not selected_triangle:
+	var targets: Array[TriangleNode] = _get_selected_layer_targets()
+	if targets.is_empty():
 		return
-	var old_idx: int = container.get_children().find(selected_triangle)
-	var max_idx: int = container.get_child_count() - 1
-	if old_idx < max_idx:
-		var new_idx: int = old_idx + 1
-		var cmd = TriangleCommands.LayerCommand.new(self, selected_triangle, old_idx, new_idx)
+
+	var current_children: Array = container.get_children()
+	var entities: Array = _build_children_entities(current_children)
+
+	var is_entity_selected: Array[bool] = []
+	for ent in entities:
+		var sel: bool = false
+		for node in ent:
+			if targets.has(node):
+				sel = true
+				break
+		is_entity_selected.append(sel)
+
+	var changed: bool = false
+	for i in range(entities.size() - 2, -1, -1):
+		if is_entity_selected[i] and not is_entity_selected[i + 1]:
+			var temp = entities[i]
+			entities[i] = entities[i + 1]
+			entities[i + 1] = temp
+			is_entity_selected[i] = false
+			is_entity_selected[i + 1] = true
+			changed = true
+
+	if changed:
+		var new_children: Array = []
+		for ent in entities:
+			for node in ent:
+				new_children.append(node)
+		var cmd = TriangleCommands.ReorderChildrenCommand.new(self, current_children, new_children)
 		action_performed.emit(cmd)
 
 func send_backward() -> void:
-	if not selected_triangle:
+	var targets: Array[TriangleNode] = _get_selected_layer_targets()
+	if targets.is_empty():
 		return
-	var old_idx: int = container.get_children().find(selected_triangle)
-	if old_idx > 0:
-		var new_idx: int = old_idx - 1
-		var cmd = TriangleCommands.LayerCommand.new(self, selected_triangle, old_idx, new_idx)
+
+	var current_children: Array = container.get_children()
+	var entities: Array = _build_children_entities(current_children)
+
+	var is_entity_selected: Array[bool] = []
+	for ent in entities:
+		var sel: bool = false
+		for node in ent:
+			if targets.has(node):
+				sel = true
+				break
+		is_entity_selected.append(sel)
+
+	var changed: bool = false
+	for i in range(1, entities.size()):
+		if is_entity_selected[i] and not is_entity_selected[i - 1]:
+			var temp = entities[i]
+			entities[i] = entities[i - 1]
+			entities[i - 1] = temp
+			is_entity_selected[i] = false
+			is_entity_selected[i - 1] = true
+			changed = true
+
+	if changed:
+		var new_children: Array = []
+		for ent in entities:
+			for node in ent:
+				new_children.append(node)
+		var cmd = TriangleCommands.ReorderChildrenCommand.new(self, current_children, new_children)
 		action_performed.emit(cmd)
+
+func bring_to_front() -> void:
+	var targets: Array[TriangleNode] = _get_selected_layer_targets()
+	if targets.is_empty():
+		return
+
+	var current_children: Array = container.get_children()
+	var entities: Array = _build_children_entities(current_children)
+
+	var unselected_entities: Array = []
+	var selected_entities: Array = []
+
+	for ent in entities:
+		var sel: bool = false
+		for node in ent:
+			if targets.has(node):
+				sel = true
+				break
+		if sel:
+			selected_entities.append(ent)
+		else:
+			unselected_entities.append(ent)
+
+	var new_entities: Array = unselected_entities + selected_entities
+	var new_children: Array = []
+	for ent in new_entities:
+		for node in ent:
+			new_children.append(node)
+
+	if new_children != current_children:
+		var cmd = TriangleCommands.ReorderChildrenCommand.new(self, current_children, new_children)
+		action_performed.emit(cmd)
+
+func send_to_back() -> void:
+	var targets: Array[TriangleNode] = _get_selected_layer_targets()
+	if targets.is_empty():
+		return
+
+	var current_children: Array = container.get_children()
+	var entities: Array = _build_children_entities(current_children)
+
+	var unselected_entities: Array = []
+	var selected_entities: Array = []
+
+	for ent in entities:
+		var sel: bool = false
+		for node in ent:
+			if targets.has(node):
+				sel = true
+				break
+		if sel:
+			selected_entities.append(ent)
+		else:
+			unselected_entities.append(ent)
+
+	var new_entities: Array = selected_entities + unselected_entities
+	var new_children: Array = []
+	for ent in new_entities:
+		for node in ent:
+			new_children.append(node)
+
+	if new_children != current_children:
+		var cmd = TriangleCommands.ReorderChildrenCommand.new(self, current_children, new_children)
+		action_performed.emit(cmd)
+
+func apply_children_order(new_order: Array) -> void:
+	for i in range(new_order.size()):
+		var t = new_order[i]
+		if t is Node and t.get_parent() == container:
+			container.move_child(t, i)
+	triangles.clear()
+	for child in container.get_children():
+		if child is TriangleNode:
+			triangles.append(child)
+	queue_redraw()
 
 func set_triangle_index(triangle: TriangleNode, new_index: int) -> void:
 	if triangle.get_parent() == container:
@@ -539,38 +747,72 @@ func load_template_triangles(template_name: String) -> void:
 		select_triangle(new_nodes[new_nodes.size() - 1])
 
 func scale_selected(factor: float) -> void:
+	var targets: Array[TriangleNode] = []
 	if selected_triangles.size() > 1:
-		var group_center: Vector2 = get_group_center()
+		targets = selected_triangles.duplicate()
+	elif selected_triangle and is_instance_valid(selected_triangle):
+		if not selected_triangle.group_id.is_empty():
+			for t in triangles:
+				if is_instance_valid(t) and t.group_id == selected_triangle.group_id:
+					targets.append(t)
+		else:
+			targets = [selected_triangle]
+
+	if targets.is_empty():
+		return
+
+	if targets.size() > 1:
+		var group_center: Vector2 = Vector2.ZERO
+		var count: int = 0
+		for t in targets:
+			if is_instance_valid(t):
+				group_center += t.position + t.get_centroid()
+				count += 1
+		group_center /= float(maxi(count, 1))
+
 		var starts: Dictionary = {}
 		var ends: Dictionary = {}
 		var pos_starts: Dictionary = {}
 		var pos_ends: Dictionary = {}
-		for t in selected_triangles:
-			if is_instance_valid(t):
-				var old_verts: Array[Vector2] = [t.vertex_a, t.vertex_b, t.vertex_c]
-				var local_c: Vector2 = t.get_centroid()
-				var world_c: Vector2 = t.position + local_c
-				var new_world_c: Vector2 = group_center + (world_c - group_center) * factor
-				var new_pos: Vector2 = new_world_c - local_c * factor
+		var all_valid: bool = true
+		var candidate_new_verts: Dictionary = {}
+		var candidate_new_pos: Dictionary = {}
 
-				var new_verts = TriangleMath.scale_vertices_proportional(old_verts, factor, local_c)
-				if TriangleMath.is_valid_triangle(new_verts[0], new_verts[1], new_verts[2], 10.0):
-					starts[t] = old_verts
-					ends[t] = new_verts
-					pos_starts[t] = t.position
-					pos_ends[t] = new_pos
-					t.position = new_pos
-					t.vertex_a = new_verts[0]
-					t.vertex_b = new_verts[1]
-					t.vertex_c = new_verts[2]
-					t.geometry_changed.emit(t)
-					t.queue_redraw()
-		if not ends.is_empty():
-			var cmd = TriangleCommands.MultiTransformVerticesCommand.new(selected_triangles, starts, ends, pos_starts, pos_ends)
+		for t in targets:
+			if not is_instance_valid(t):
+				continue
+			var old_verts: Array[Vector2] = [t.vertex_a, t.vertex_b, t.vertex_c]
+			var new_pos: Vector2 = group_center + (t.position - group_center) * factor
+			var new_verts: Array[Vector2] = [
+				t.vertex_a * factor,
+				t.vertex_b * factor,
+				t.vertex_c * factor
+			]
+			if not TriangleMath.is_valid_triangle(new_verts[0], new_verts[1], new_verts[2], 5.0):
+				all_valid = false
+				break
+			candidate_new_verts[t] = new_verts
+			candidate_new_pos[t] = new_pos
+
+		if all_valid and not candidate_new_verts.is_empty():
+			for t in candidate_new_verts.keys():
+				starts[t] = [t.vertex_a, t.vertex_b, t.vertex_c]
+				ends[t] = candidate_new_verts[t]
+				pos_starts[t] = t.position
+				pos_ends[t] = candidate_new_pos[t]
+
+				t.position = candidate_new_pos[t]
+				t.vertex_a = candidate_new_verts[t][0]
+				t.vertex_b = candidate_new_verts[t][1]
+				t.vertex_c = candidate_new_verts[t][2]
+				t.geometry_changed.emit(t)
+				t.queue_redraw()
+
+			var cmd = TriangleCommands.MultiTransformVerticesCommand.new(targets, starts, ends, pos_starts, pos_ends)
 			action_performed.emit(cmd)
 			queue_redraw()
-	elif selected_triangle and is_instance_valid(selected_triangle):
-		selected_triangle.scale_by_ratio(factor)
+	elif targets.size() == 1:
+		targets[0].scale_by_ratio(factor)
 		queue_redraw()
 
 func _on_triangle_action_committed(cmd: Variant) -> void:
@@ -713,6 +955,33 @@ func _gui_input(event: InputEvent) -> void:
 
 			queue_redraw()
 			accept_event()
+		elif is_dragging_group_scale:
+			var cur_dist: float = world_mouse.distance_to(drag_group_scale_center)
+			var raw_factor: float = cur_dist / maxf(drag_group_scale_start_dist, 1.0)
+			var factor: float = clampf(raw_factor, 0.15, 8.0)
+			if snap_enabled:
+				factor = roundf(factor * 10.0) / 10.0
+			current_group_scale_factor = factor
+
+			for t in selected_triangles:
+				if is_instance_valid(t) and drag_group_scale_start_positions.has(t) and drag_group_scale_start_verts.has(t):
+					var s_pos: Vector2 = drag_group_scale_start_positions[t]
+					var s_verts: Array = drag_group_scale_start_verts[t]
+					var new_pos: Vector2 = drag_group_scale_center + (s_pos - drag_group_scale_center) * factor
+					var new_a: Vector2 = s_verts[0] * factor
+					var new_b: Vector2 = s_verts[1] * factor
+					var new_c: Vector2 = s_verts[2] * factor
+
+					if TriangleMath.is_valid_triangle(new_a, new_b, new_c, 5.0):
+						t.position = new_pos
+						t.vertex_a = new_a
+						t.vertex_b = new_b
+						t.vertex_c = new_c
+						t.geometry_changed.emit(t)
+						t.queue_redraw()
+
+			queue_redraw()
+			accept_event()
 		elif active_interacting_triangle and is_instance_valid(active_interacting_triangle):
 			if active_interacting_triangle.current_drag == TriangleNode.DragMode.BODY and selected_triangles.size() > 1:
 				var delta: Vector2 = world_mouse - active_interacting_triangle.drag_start_mouse
@@ -791,6 +1060,9 @@ func _update_hover_cursor(world_mouse: Vector2) -> void:
 	if is_dragging_group_rotation or (active_interacting_triangle and active_interacting_triangle.current_drag == TriangleNode.DragMode.ROTATION):
 		mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 		return
+	if is_dragging_group_scale:
+		mouse_default_cursor_shape = Control.CURSOR_FDIAGSIZE
+		return
 	if active_interacting_triangle and active_interacting_triangle.current_drag == TriangleNode.DragMode.BODY:
 		mouse_default_cursor_shape = Control.CURSOR_MOVE
 		return
@@ -798,6 +1070,9 @@ func _update_hover_cursor(world_mouse: Vector2) -> void:
 		mouse_default_cursor_shape = Control.CURSOR_CROSS
 		return
 
+	if selected_triangles.size() > 1 and hit_test_group_scale_handle(world_mouse) != -1:
+		mouse_default_cursor_shape = Control.CURSOR_FDIAGSIZE
+		return
 	if selected_triangles.size() > 1 and hit_test_group_rotation_handle(world_mouse):
 		mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 		return
@@ -876,8 +1151,10 @@ func _show_context_menu(global_pos: Vector2) -> void:
 		context_menu.add_item("상하 반전", MenuAction.FLIP_V)
 		context_menu.add_separator()
 
-		context_menu.add_item("앞으로 가져오기", MenuAction.LAYER_UP)
-		context_menu.add_item("뒤로 보내기", MenuAction.LAYER_DOWN)
+		context_menu.add_item("맨 앞으로 가져오기 (Ctrl+Shift+])", MenuAction.LAYER_FRONT)
+		context_menu.add_item("앞으로 가져오기 (Ctrl+])", MenuAction.LAYER_UP)
+		context_menu.add_item("뒤로 보내기 (Ctrl+[)", MenuAction.LAYER_DOWN)
+		context_menu.add_item("맨 뒤로 보내기 (Ctrl+Shift+[)", MenuAction.LAYER_BACK)
 		context_menu.add_separator()
 
 		context_menu.add_item("크기 확대 (+20%)", MenuAction.SCALE_UP)
@@ -924,12 +1201,18 @@ func _on_context_menu_id_pressed(id: int) -> void:
 		MenuAction.FLIP_V:
 			flip_selected_v()
 			toast_requested.emit("삼각형을 상하 반전했습니다.")
+		MenuAction.LAYER_FRONT:
+			bring_to_front()
+			toast_requested.emit("맨 앞으로 가져왔습니다.")
 		MenuAction.LAYER_UP:
 			bring_forward()
-			toast_requested.emit("삼각형을 한 단계 앞으로 가져왔습니다.")
+			toast_requested.emit("한 단계 앞으로 가져왔습니다.")
 		MenuAction.LAYER_DOWN:
 			send_backward()
-			toast_requested.emit("삼각형을 한 단계 뒤로 보냈습니다.")
+			toast_requested.emit("한 단계 뒤로 보냈습니다.")
+		MenuAction.LAYER_BACK:
+			send_to_back()
+			toast_requested.emit("맨 뒤로 보냈습니다.")
 		MenuAction.SCALE_UP:
 			scale_selected(1.2)
 			toast_requested.emit("삼각형 크기를 20% 확대했습니다.")
@@ -960,11 +1243,17 @@ func _handle_mouse_press(world_pos: Vector2, is_shift: bool = false, local_pos: 
 	drag_multi_start_positions.clear()
 	active_snap_indicators.clear()
 
-	# 0. Check group rotation handle first if multi-selected
-	if selected_triangles.size() > 1 and hit_test_group_rotation_handle(world_pos):
-		_start_group_rotation_drag(world_pos)
-		queue_redraw()
-		return
+	# 0. Check group handles first if multi-selected
+	if selected_triangles.size() > 1:
+		var corner_idx: int = hit_test_group_scale_handle(world_pos)
+		if corner_idx != -1:
+			_start_group_scale_drag(world_pos, corner_idx)
+			queue_redraw()
+			return
+		if hit_test_group_rotation_handle(world_pos):
+			_start_group_rotation_drag(world_pos)
+			queue_redraw()
+			return
 
 	# 1. First check if any already selected triangle handle or body was clicked
 	for st in selected_triangles:
@@ -1014,6 +1303,25 @@ func _handle_mouse_press(world_pos: Vector2, is_shift: bool = false, local_pos: 
 
 func _handle_mouse_release(world_pos: Vector2, local_pos: Vector2 = Vector2.ZERO) -> void:
 	active_snap_indicators.clear()
+
+	if is_dragging_group_scale:
+		is_dragging_group_scale = false
+		if absf(current_group_scale_factor - 1.0) > 0.02:
+			var starts: Dictionary = drag_group_scale_start_verts.duplicate()
+			var pos_starts: Dictionary = drag_group_scale_start_positions.duplicate()
+			var ends: Dictionary = {}
+			var pos_ends: Dictionary = {}
+			for t in selected_triangles:
+				if is_instance_valid(t):
+					ends[t] = [t.vertex_a, t.vertex_b, t.vertex_c]
+					pos_ends[t] = t.position
+			var cmd = TriangleCommands.MultiTransformVerticesCommand.new(selected_triangles, starts, ends, pos_starts, pos_ends)
+			action_performed.emit(cmd)
+		drag_group_scale_start_positions.clear()
+		drag_group_scale_start_verts.clear()
+		current_group_scale_factor = 1.0
+		queue_redraw()
+		return
 
 	if is_dragging_group_rotation:
 		is_dragging_group_rotation = false
@@ -1382,24 +1690,36 @@ func _draw_group_selection_overlay() -> void:
 	draw_rect(c_rect, Color(0.18, 0.55, 0.95, 0.04), true)
 	draw_rect(c_rect, Color(0.22, 0.58, 0.98, 0.75), false, 1.4)
 
-	# 2. Corner markers
-	var corner_len: float = 8.0
-	var c_col: Color = Color(0.22, 0.58, 0.98, 0.95)
-	# Top-left
-	draw_line(c_rect.position, c_rect.position + Vector2(corner_len, 0), c_col, 2.0)
-	draw_line(c_rect.position, c_rect.position + Vector2(0, corner_len), c_col, 2.0)
-	# Top-right
-	var tr: Vector2 = c_rect.position + Vector2(c_rect.size.x, 0)
-	draw_line(tr, tr - Vector2(corner_len, 0), c_col, 2.0)
-	draw_line(tr, tr + Vector2(0, corner_len), c_col, 2.0)
-	# Bottom-left
-	var bl: Vector2 = c_rect.position + Vector2(0, c_rect.size.y)
-	draw_line(bl, bl + Vector2(corner_len, 0), c_col, 2.0)
-	draw_line(bl, bl - Vector2(0, corner_len), c_col, 2.0)
-	# Bottom-right
-	var br: Vector2 = c_rect.position + c_rect.size
-	draw_line(br, br - Vector2(corner_len, 0), c_col, 2.0)
-	draw_line(br, br - Vector2(0, corner_len), c_col, 2.0)
+	# 2. Corner Scale Handles (4 corners)
+	var corner_world: Array[Vector2] = get_group_scale_corner_positions()
+	var handle_size: float = 8.0
+	var half_h: Vector2 = Vector2(handle_size * 0.5, handle_size * 0.5)
+	for i in range(corner_world.size()):
+		var c_pos: Vector2 = world_to_canvas(corner_world[i])
+		var h_rect: Rect2 = Rect2(c_pos - half_h, Vector2(handle_size, handle_size))
+		# Shadow
+		draw_rect(Rect2(h_rect.position + Vector2(1, 1), h_rect.size), Color(0, 0, 0, 0.25), true)
+		# White body
+		draw_rect(h_rect, Color.WHITE, true)
+		# Border (highlight if dragging this corner)
+		var b_col: Color = Color(0.2, 0.55, 0.95, 1.0)
+		if is_dragging_group_scale and drag_group_scale_corner_idx == i:
+			b_col = Color(0.96, 0.82, 0.28, 1.0)
+		draw_rect(h_rect, b_col, false, 1.5)
+
+	# 2b. If currently dragging group scale, draw percentage badge
+	if is_dragging_group_scale and drag_group_scale_corner_idx >= 0 and drag_group_scale_corner_idx < corner_world.size():
+		var font: Font = ThemeDB.fallback_font
+		var scale_pct: int = int(roundf(current_group_scale_factor * 100.0))
+		var scale_text: String = "%d%%" % scale_pct
+		var str_size: Vector2 = font.get_string_size(scale_text, HORIZONTAL_ALIGNMENT_CENTER, -1, 13)
+		var padding: Vector2 = Vector2(6, 3)
+		var c_pos: Vector2 = world_to_canvas(corner_world[drag_group_scale_corner_idx])
+		var badge_rect: Rect2 = Rect2(c_pos + Vector2(12, 12) - padding, str_size + padding * 2.0)
+		draw_rect(badge_rect, Color(0.1, 0.15, 0.25, 0.95), true, -1.0)
+		draw_rect(badge_rect, Color(0.96, 0.82, 0.28, 0.9), false, 1.2)
+		var baseline: Vector2 = Vector2(badge_rect.position.x + padding.x, badge_rect.position.y + padding.y + font.get_ascent(13))
+		draw_string(font, baseline, scale_text, HORIZONTAL_ALIGNMENT_CENTER, -1, 13, Color(1, 1, 1, 0.95))
 
 	# 3. Group Rotation Handle
 	var group_rot_h_world: Vector2 = get_group_rotation_handle_pos()

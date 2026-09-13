@@ -59,9 +59,11 @@ var btn_remove_outline: Button = null
 var slider_r: HSlider = null
 var slider_g: HSlider = null
 var slider_b: HSlider = null
+var slider_v: HSlider = null
 var label_r_val: Label = null
 var label_g_val: Label = null
 var label_b_val: Label = null
+var label_v_val: Label = null
 
 var preview_swatch: Panel = null
 var hex_label: Label = null
@@ -209,6 +211,7 @@ func _build_palette() -> void:
 	var init_r: int = int(roundf(active_c.r * 255.0))
 	var init_g: int = int(roundf(active_c.g * 255.0))
 	var init_b: int = int(roundf(active_c.b * 255.0))
+	var init_v: int = int(roundf(active_c.v * 100.0))
 
 	var row_r = _create_slider_row("R", Color(0.95, 0.3, 0.3), init_r)
 	slider_r = row_r["slider"]
@@ -225,10 +228,19 @@ func _build_palette() -> void:
 	label_b_val = row_b["value_label"]
 	rgb_cluster.add_child(row_b["container"])
 
+	var row_v = _create_slider_row("명암", Color(0.96, 0.82, 0.28), init_v, 0, 100, "%")
+	slider_v = row_v["slider"]
+	label_v_val = row_v["value_label"]
+	rgb_cluster.add_child(row_v["container"])
+
 	for s in [slider_r, slider_g, slider_b]:
 		s.drag_started.connect(_on_slider_drag_started)
 		s.value_changed.connect(_on_slider_value_changed)
 		s.drag_ended.connect(_on_slider_drag_ended)
+
+	slider_v.drag_started.connect(_on_slider_drag_started)
+	slider_v.value_changed.connect(_on_slider_v_value_changed)
+	slider_v.drag_ended.connect(_on_slider_drag_ended)
 
 	# Separator 4
 	add_child(_create_vsep())
@@ -327,22 +339,22 @@ func _create_vsep() -> VSeparator:
 	sep.add_theme_stylebox_override("separator", sep_style)
 	return sep
 
-func _create_slider_row(label_text: String, color: Color, initial_val: int) -> Dictionary:
+func _create_slider_row(label_text: String, color: Color, initial_val: int, min_v: int = 0, max_v: int = 255, suffix: String = "") -> Dictionary:
 	var hbox: HBoxContainer = HBoxContainer.new()
-	hbox.add_theme_constant_override("separation", 5)
+	hbox.add_theme_constant_override("separation", 4)
 	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
 
 	var lbl: Label = Label.new()
 	lbl.text = label_text
-	lbl.custom_minimum_size = Vector2(10, 14)
-	lbl.add_theme_font_size_override("font_size", 11)
+	lbl.custom_minimum_size = Vector2(24, 14)
+	lbl.add_theme_font_size_override("font_size", 10)
 	lbl.add_theme_color_override("font_color", color)
 	hbox.add_child(lbl)
 
 	var slider: HSlider = HSlider.new()
-	slider.custom_minimum_size = Vector2(86, 14)
-	slider.min_value = 0
-	slider.max_value = 255
+	slider.custom_minimum_size = Vector2(80, 14)
+	slider.min_value = min_v
+	slider.max_value = max_v
 	slider.step = 1
 	slider.value = initial_val
 	slider.focus_mode = Control.FOCUS_NONE
@@ -372,8 +384,8 @@ func _create_slider_row(label_text: String, color: Color, initial_val: int) -> D
 	hbox.add_child(slider)
 
 	var val_lbl: Label = Label.new()
-	val_lbl.text = str(initial_val)
-	val_lbl.custom_minimum_size = Vector2(24, 14)
+	val_lbl.text = str(initial_val) + suffix
+	val_lbl.custom_minimum_size = Vector2(28, 14)
 	val_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	val_lbl.add_theme_font_size_override("font_size", 10)
 	val_lbl.add_theme_color_override("font_color", Color(0.85, 0.9, 0.98, 1.0))
@@ -445,6 +457,12 @@ func _update_preview_and_sliders() -> void:
 		label_g_val.text = str(g)
 	if label_b_val:
 		label_b_val.text = str(b)
+
+	if slider_v:
+		var v_pct: int = int(roundf(clampf(c.v, 0.0, 1.0) * 100.0))
+		slider_v.value = v_pct
+		if label_v_val:
+			label_v_val.text = "%d%%" % v_pct
 	_internal_updating = false
 
 	if preview_swatch:
@@ -492,6 +510,58 @@ func _on_slider_value_changed(_val: float) -> void:
 	label_b_val.text = str(b)
 
 	var new_color: Color = Color8(r, g, b, 255)
+
+	_internal_updating = true
+	if slider_v:
+		var v_pct: int = int(roundf(clampf(new_color.v, 0.0, 1.0) * 100.0))
+		slider_v.value = v_pct
+		if label_v_val:
+			label_v_val.text = "%d%%" % v_pct
+	_internal_updating = false
+
+	var is_outline: bool = (current_mode == TargetMode.OUTLINE)
+	if is_outline:
+		current_outline_color = new_color
+	else:
+		current_fill_color = new_color
+
+	_update_preview_swatch_only(new_color)
+
+	if _is_dragging:
+		color_preview.emit(new_color, is_outline)
+	else:
+		color_selected.emit(new_color, is_outline)
+
+func _on_slider_v_value_changed(_val: float) -> void:
+	if _internal_updating:
+		return
+
+	var v_percent: int = int(slider_v.value)
+	if label_v_val:
+		label_v_val.text = "%d%%" % v_percent
+
+	var cur: Color = _get_active_target_color()
+	var new_v: float = clampf(float(v_percent) / 100.0, 0.0, 1.0)
+	var new_color: Color
+	if cur.s < 0.01 and cur.v < 0.01:
+		new_color = Color(new_v, new_v, new_v, cur.a)
+	elif cur.s < 0.01:
+		new_color = Color(new_v, new_v, new_v, cur.a)
+	else:
+		new_color = Color.from_hsv(cur.h, cur.s, new_v, cur.a)
+
+	_internal_updating = true
+	var r: int = int(roundf(clampf(new_color.r, 0.0, 1.0) * 255.0))
+	var g: int = int(roundf(clampf(new_color.g, 0.0, 1.0) * 255.0))
+	var b: int = int(roundf(clampf(new_color.b, 0.0, 1.0) * 255.0))
+	if slider_r: slider_r.value = r
+	if slider_g: slider_g.value = g
+	if slider_b: slider_b.value = b
+	if label_r_val: label_r_val.text = str(r)
+	if label_g_val: label_g_val.text = str(g)
+	if label_b_val: label_b_val.text = str(b)
+	_internal_updating = false
+
 	var is_outline: bool = (current_mode == TargetMode.OUTLINE)
 	if is_outline:
 		current_outline_color = new_color

@@ -91,6 +91,19 @@ class LayerCommand extends RefCounted:
 	func undo() -> void:
 		canvas.set_triangle_index(triangle, old_idx)
 
+class ReorderChildrenCommand extends RefCounted:
+	var canvas: Node
+	var old_order: Array
+	var new_order: Array
+	func _init(p_canvas: Node, p_old_order: Array, p_new_order: Array) -> void:
+		canvas = p_canvas
+		old_order = p_old_order.duplicate()
+		new_order = p_new_order.duplicate()
+	func execute() -> void:
+		canvas.apply_children_order(new_order)
+	func undo() -> void:
+		canvas.apply_children_order(old_order)
+
 class BatchCreateCommand extends RefCounted:
 	var canvas: Node
 	var triangles: Array

@@ -146,6 +146,36 @@ func _unhandled_key_input(event: InputEvent) -> void:
 			var rot_angle: float = -45.0 if k.shift_pressed else 45.0
 			_on_rotate_requested(rot_angle)
 			get_viewport().set_input_as_handled()
+		# Ctrl + Shift + ] (Bring to Front)
+		elif k.ctrl_pressed and k.shift_pressed and k.keycode == KEY_BRACKETRIGHT:
+			canvas.bring_to_front()
+			_show_toast("맨 앞으로 가져왔습니다.")
+			get_viewport().set_input_as_handled()
+		# Ctrl + Shift + [ (Send to Back)
+		elif k.ctrl_pressed and k.shift_pressed and k.keycode == KEY_BRACKETLEFT:
+			canvas.send_to_back()
+			_show_toast("맨 뒤로 보냈습니다.")
+			get_viewport().set_input_as_handled()
+		# Ctrl + ] (Bring Forward)
+		elif k.ctrl_pressed and not k.shift_pressed and k.keycode == KEY_BRACKETRIGHT:
+			canvas.bring_forward()
+			_show_toast("한 단계 앞으로 가져왔습니다.")
+			get_viewport().set_input_as_handled()
+		# Ctrl + [ (Send Backward)
+		elif k.ctrl_pressed and not k.shift_pressed and k.keycode == KEY_BRACKETLEFT:
+			canvas.send_backward()
+			_show_toast("한 단계 뒤로 보냈습니다.")
+			get_viewport().set_input_as_handled()
+		# + / = / KP_ADD (Scale Up)
+		elif not k.ctrl_pressed and not k.alt_pressed and (k.keycode == KEY_EQUAL or k.keycode == KEY_PLUS or k.keycode == KEY_KP_ADD):
+			canvas.scale_selected(1.2)
+			_show_toast("삼각형 크기를 20% 확대했습니다.")
+			get_viewport().set_input_as_handled()
+		# - / KP_SUBTRACT (Scale Down)
+		elif not k.ctrl_pressed and not k.alt_pressed and (k.keycode == KEY_MINUS or k.keycode == KEY_KP_SUBTRACT):
+			canvas.scale_selected(0.8)
+			_show_toast("삼각형 크기를 20% 축소했습니다.")
+			get_viewport().set_input_as_handled()
 
 func _on_command_state_changed() -> void:
 	toolbar.update_undo_redo_states(command_manager.can_undo(), command_manager.can_redo())
