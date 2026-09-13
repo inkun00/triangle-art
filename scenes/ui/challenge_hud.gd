@@ -39,7 +39,7 @@ func set_challenge(template_name: String) -> void:
 	current_template_name = template_name
 	is_completed = false
 	victory_panel.visible = false
-	lbl_title.text = "🎮 챌린지: " + template_name
+	lbl_title.text = "★ 챌린지: " + template_name
 	progress_accuracy.value = 0
 	lbl_accuracy.text = "일치율: 0%"
 	lbl_counts.text = "삼각형 준비 중..."

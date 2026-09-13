@@ -472,7 +472,7 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(92, 26)
 layout_mode = 2
 tooltip_text = "캔버스 도화지 크기 설정 (프리셋 및 가로/세로 직접 입력)"
-text = "📐 1200×800"
+text = "1200×800"
 
 [node name="Spacer" type="Control" parent="VBox/HBoxActions"]
 layout_mode = 2
@@ -480,10 +480,10 @@ size_flags_horizontal = 3
 
 [node name="BtnSound" type="Button" parent="VBox/HBoxActions"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(36, 28)
+custom_minimum_size = Vector2(62, 28)
 layout_mode = 2
 tooltip_text = "효과음 온/오프 토글"
-text = "🔊"
+text = "음향: ON"
 
 [node name="BtnChallenge" type="Button" parent="VBox/HBoxActions"]
 unique_name_in_owner = true
@@ -493,7 +493,7 @@ theme_override_styles/normal = SubResource("StyleBoxFlat_challenge_btn_normal")
 theme_override_styles/hover = SubResource("StyleBoxFlat_challenge_btn_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_challenge_btn_pressed")
 tooltip_text = "퍼즐 챌린지 모드: 실루엣을 채워 별 3개를 획득하세요!"
-text = "🎮 챌린지"
+text = "★ 챌린지"
 
 [node name="OptTemplates" type="OptionButton" parent="VBox/HBoxActions"]
 unique_name_in_owner = true
@@ -503,17 +503,17 @@ tooltip_text = "예제 도안 불러오기"
 
 [node name="BtnSaveProject" type="Button" parent="VBox/HBoxActions"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(72, 28)
+custom_minimum_size = Vector2(64, 28)
 layout_mode = 2
 tooltip_text = "프로젝트 파일로 저장합니다 (.triart / Ctrl+S)"
-text = "💾 저장"
+text = "저장"
 
 [node name="BtnLoadProject" type="Button" parent="VBox/HBoxActions"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(72, 28)
+custom_minimum_size = Vector2(64, 28)
 layout_mode = 2
 tooltip_text = "저장된 프로젝트 파일을 열거나 붙여넣습니다 (.triart / Ctrl+O)"
-text = "📂 열기"
+text = "열기"
 
 [node name="BtnExport" type="Button" parent="VBox/HBoxActions"]
 unique_name_in_owner = true

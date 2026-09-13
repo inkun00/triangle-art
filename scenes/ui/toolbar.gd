@@ -267,7 +267,7 @@ func _on_sound_pressed() -> void:
 
 func _update_sound_ui() -> void:
 	if btn_sound:
-		btn_sound.text = "🔊" if sound_active else "🔇"
+		btn_sound.text = "음향: ON" if sound_active else "음향: OFF"
 		btn_sound.tooltip_text = "효과음: 켜짐" if sound_active else "효과음: 음소거"
 
 func _on_challenge_pressed() -> void:
@@ -279,10 +279,10 @@ func _on_challenge_pressed() -> void:
 func _update_challenge_ui() -> void:
 	if btn_challenge:
 		if challenge_active:
-			btn_challenge.text = "🎮 챌린지: 켜짐"
+			btn_challenge.text = "★ 챌린지: 켜짐"
 			btn_challenge.add_theme_stylebox_override("normal", style_active_challenge)
 		else:
-			btn_challenge.text = "🎮 챌린지"
+			btn_challenge.text = "★ 챌린지"
 			btn_challenge.remove_theme_stylebox_override("normal")
 
 func set_challenge_active(active: bool) -> void:
@@ -376,7 +376,7 @@ func _setup_canvas_size_menu() -> void:
 		var item = PRESET_SIZES[i]
 		canvas_size_menu.add_item(item["name"], i)
 	canvas_size_menu.add_separator()
-	canvas_size_menu.add_item("✏️ 직접 입력 (Custom Size)...", 100)
+	canvas_size_menu.add_item("직접 입력 (Custom Size)...", 100)
 	canvas_size_menu.id_pressed.connect(_on_canvas_size_menu_id_pressed)
 	add_child(canvas_size_menu)
 
@@ -397,7 +397,7 @@ func _on_canvas_size_menu_id_pressed(id: int) -> void:
 func set_canvas_size(new_size: Vector2) -> void:
 	current_canvas_size = new_size
 	if btn_canvas_size:
-		btn_canvas_size.text = "📐 %d×%d" % [int(current_canvas_size.x), int(current_canvas_size.y)]
+		btn_canvas_size.text = "%d×%d" % [int(current_canvas_size.x), int(current_canvas_size.y)]
 
 func _show_custom_size_dialog() -> void:
 	if custom_size_dialog and is_instance_valid(custom_size_dialog):
@@ -426,7 +426,7 @@ func _show_custom_size_dialog() -> void:
 	custom_size_dialog.add_child(vbox)
 
 	var title_lbl: Label = Label.new()
-	title_lbl.text = "📐 캔버스 크기 직접 설정"
+	title_lbl.text = "캔버스 크기 직접 설정"
 	title_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title_lbl.add_theme_font_size_override("font_size", 13)
 	title_lbl.add_theme_color_override("font_color", Color(0.85, 0.92, 1.0, 1.0))
@@ -537,7 +537,7 @@ func _show_load_project_dialog() -> void:
 	vbox.add_child(title_bar)
 
 	var lbl_title: Label = Label.new()
-	lbl_title.text = "📂 프로젝트 열기 (.triart / .json)"
+	lbl_title.text = "프로젝트 열기 (.triart / .json)"
 	lbl_title.add_theme_font_size_override("font_size", 14)
 	lbl_title.add_theme_color_override("font_color", Color(0.9, 0.95, 1.0))
 	lbl_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -562,12 +562,12 @@ func _show_load_project_dialog() -> void:
 	vbox.add_child(action_bar)
 
 	var btn_paste_clip: Button = Button.new()
-	btn_paste_clip.text = "📋 클립보드 붙여넣기"
+	btn_paste_clip.text = "클립보드 붙여넣기"
 	btn_paste_clip.custom_minimum_size = Vector2(130, 26)
 	action_bar.add_child(btn_paste_clip)
 
 	var btn_file_pick: Button = Button.new()
-	btn_file_pick.text = "📁 파일 탐색기..."
+	btn_file_pick.text = "파일 탐색기..."
 	btn_file_pick.custom_minimum_size = Vector2(110, 26)
 	action_bar.add_child(btn_file_pick)
 
