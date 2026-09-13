@@ -98,6 +98,9 @@ func _ready() -> void:
 	await get_tree().process_frame
 	canvas.add_new_equilateral_triangle()
 
+	if OS.has_feature("web"):
+		JavaScriptBridge.eval("window.triangleArtReady && window.triangleArtReady();")
+
 	_show_toast("Triangle Art에 오신 것을 환영합니다! 자유롭게 삼각형으로 그림을 그려보세요.")
 
 func _unhandled_key_input(event: InputEvent) -> void:
