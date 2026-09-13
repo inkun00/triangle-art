@@ -5,7 +5,6 @@ extends Control
 ## across 3 progressive difficulty levels (초급, 중급, 고급).
 
 signal template_load_requested(template_name: String)
-signal template_guide_requested(template_name: String)
 signal closed
 
 @onready var btn_close: Button = %BtnClose
@@ -211,8 +210,8 @@ func _create_card(meta: Dictionary) -> PanelContainer:
 
 	# Load button
 	var btn_load: Button = Button.new()
-	btn_load.text = "불러오기"
-	btn_load.custom_minimum_size = Vector2(80, 26)
+	btn_load.text = "도안 불러오기"
+	btn_load.custom_minimum_size = Vector2(100, 28)
 	btn_load.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	btn_load.tooltip_text = "이 도안의 삼각형들을 캔버스에 색상과 함께 즉시 불러옵니다."
 	btn_load.pressed.connect(func():
@@ -220,17 +219,5 @@ func _create_card(meta: Dictionary) -> PanelContainer:
 		template_load_requested.emit(t_name)
 	)
 	btn_row.add_child(btn_load)
-
-	# Guide button
-	var btn_guide: Button = Button.new()
-	btn_guide.text = "따라 그리기"
-	btn_guide.custom_minimum_size = Vector2(80, 26)
-	btn_guide.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	btn_guide.tooltip_text = "캔버스에 반투명 실루엣 가이드를 띄워 직접 보고 그릴 수 있습니다."
-	btn_guide.pressed.connect(func():
-		visible = false
-		template_guide_requested.emit(t_name)
-	)
-	btn_row.add_child(btn_guide)
 
 	return card

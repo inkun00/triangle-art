@@ -76,9 +76,6 @@ var triangles: Array[TriangleNode] = []
 var selected_triangle: TriangleNode = null
 var selected_triangles: Array[TriangleNode] = []
 var active_interacting_triangle: TriangleNode = null
-var show_guide: bool = false
-var active_guide_name: String = "물고기 (Fish)"
-var guide_triangles: Array[Dictionary] = []
 
 var is_marquee_selecting: bool = false
 var marquee_start: Vector2 = Vector2.ZERO
@@ -137,9 +134,6 @@ func set_canvas_size(new_size: Vector2) -> void:
 	if canvas_size != clamped_size:
 		canvas_size = clamped_size
 		canvas_size_changed.emit(canvas_size)
-		if show_guide and not active_guide_name.is_empty():
-			var center: Vector2 = canvas_size / 2.0
-			guide_triangles = TriangleTemplates.get_template_data(active_guide_name, center)
 		fit_canvas_in_view()
 		queue_redraw()
 
@@ -1517,17 +1511,6 @@ func flip_selected_v() -> void:
 		selected_triangle.flip_v()
 		queue_redraw()
 
-func set_guide_state(enabled: bool, t_name: String = "") -> void:
-	show_guide = enabled
-	if not t_name.is_empty():
-		active_guide_name = t_name
-	if show_guide:
-		var center: Vector2 = canvas_size / 2.0
-		guide_triangles = TriangleTemplates.get_template_data(active_guide_name, center)
-	else:
-		guide_triangles.clear()
-	queue_redraw()
-
 func export_project_json() -> String:
 	return ProjectStorage.serialize_project(triangles, canvas_size)
 
@@ -1638,18 +1621,6 @@ func _draw() -> void:
 	if font:
 		var dim_str: String = "%d × %d px" % [int(canvas_size.x), int(canvas_size.y)]
 		draw_string(font, paper_origin + Vector2(6.0, -8.0), dim_str, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(0.65, 0.75, 0.9, 0.8))
-
-	# 4. Silhouette Guide Overlay (if active)
-	if show_guide and not guide_triangles.is_empty():
-		for item in guide_triangles:
-			var pos: Vector2 = item["pos"]
-			var p0: Vector2 = world_to_canvas(pos + item["a"])
-			var p1: Vector2 = world_to_canvas(pos + item["b"])
-			var p2: Vector2 = world_to_canvas(pos + item["c"])
-			var fill_c: Color = item["color"]
-			fill_c.a = 0.18
-			draw_colored_polygon(PackedVector2Array([p0, p1, p2]), fill_c)
-			draw_polyline(PackedVector2Array([p0, p1, p2, p0]), Color(0.25, 0.45, 0.8, 0.6), 2.2, true)
 
 	# 4. Marquee selection rectangle (screen space)
 	if is_marquee_selecting:

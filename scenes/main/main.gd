@@ -66,7 +66,6 @@ func _ready() -> void:
 	toolbar.snap_toggled.connect(_on_snap_toggled)
 	toolbar.scale_lock_toggled.connect(_on_toolbar_scale_lock_toggled)
 	toolbar.zoom_reset_requested.connect(_on_zoom_reset_requested)
-	toolbar.guide_toggled.connect(_on_guide_toggled)
 	toolbar.bg_mode_toggled.connect(_on_bg_mode_toggled)
 	toolbar.canvas_size_requested.connect(_on_canvas_size_requested)
 	toolbar.template_selected.connect(_on_template_selected)
@@ -92,7 +91,6 @@ func _ready() -> void:
 	# 5. Connect Template Gallery signals
 	if gallery_dialog:
 		gallery_dialog.template_load_requested.connect(_on_template_load_requested)
-		gallery_dialog.template_guide_requested.connect(_on_template_guide_requested)
 
 	# 6. Initialize with one initial triangle in the center!
 	await get_tree().process_frame
@@ -215,10 +213,6 @@ func _on_flip_h_requested() -> void:
 func _on_flip_v_requested() -> void:
 	canvas.flip_selected_v()
 	_show_toast("삼각형을 상하 반전했습니다.")
-
-func _on_guide_toggled(enabled: bool) -> void:
-	canvas.set_guide_state(enabled)
-	_show_toast("따라 그리기 가이드: " + ("켜짐" if enabled else "꺼짐"))
 
 func _on_layer_up() -> void:
 	canvas.bring_forward()
@@ -379,12 +373,6 @@ func _on_load_project(json_str: String) -> void:
 func _on_template_load_requested(t_name: String) -> void:
 	canvas.load_template_triangles(t_name)
 	_show_toast("도안 불러오기 완료: " + t_name)
-
-func _on_template_guide_requested(t_name: String) -> void:
-	canvas.set_guide_state(true, t_name)
-	toolbar.guide_active = true
-	toolbar._update_guide_ui()
-	_show_toast("따라 그리기 가이드 활성화: " + t_name)
 
 func _show_toast(msg: String) -> void:
 	if not toast_label:

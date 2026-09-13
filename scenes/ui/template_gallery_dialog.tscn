@@ -93,7 +93,7 @@ text = "삼각형 도안 갤러리 (총 30종)"
 layout_mode = 2
 theme_override_colors/font_color = Color(0.65, 0.75, 0.9, 1)
 theme_override_font_sizes/font_size = 12
-text = "단순한 모양부터 정교한 예술 작품까지! 원하는 도안을 골라 캔버스에 불러오거나 따라 그려보세요."
+text = "단순한 모양부터 정교한 예술 작품까지! 원하는 도안을 골라 캔버스에 자유롭게 불러와 창작해보세요."
 
 [node name="Spacer" type="Control" parent="CenterContainer/MainPanel/VBox/Header"]
 layout_mode = 2

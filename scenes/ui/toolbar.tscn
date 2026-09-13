@@ -436,13 +436,6 @@ layout_mode = 2
 tooltip_text = "화면 줌 배율입니다. 클릭하면 100%로 리셋됩니다 (마우스 휠로 조절)"
 text = "줌: 100%"
 
-[node name="BtnGuide" type="Button" parent="VBox/HBoxActions/ClusterView/HBoxView"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(64, 26)
-layout_mode = 2
-tooltip_text = "따라 그리기 실루엣 가이드 온오프"
-text = "가이드: OFF"
-
 [node name="BtnBg" type="Button" parent="VBox/HBoxActions/ClusterView/HBoxView"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(60, 26)

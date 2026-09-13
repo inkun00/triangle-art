@@ -23,7 +23,6 @@ signal clear_requested
 signal rotate_requested(angle_deg: float)
 signal flip_h_requested
 signal flip_v_requested
-signal guide_toggled(enabled: bool)
 signal grid_step_changed(step: float)
 signal group_requested
 signal ungroup_requested
@@ -50,7 +49,6 @@ const EXHIBITION_URL: String = "https://samboard.vivasam.com/studentEntry/?brdId
 @onready var btn_grid_step: Button = %BtnGridStep
 @onready var btn_snap: Button = %BtnSnap
 @onready var btn_zoom: Button = %BtnZoom
-@onready var btn_guide: Button = %BtnGuide
 @onready var btn_bg: Button = %BtnBg
 @onready var btn_canvas_size: Button = %BtnCanvasSize
 @onready var btn_sound: Button = %BtnSound
@@ -77,7 +75,6 @@ var current_grid_step_idx: int = 0
 var snap_active: bool = false
 var scale_lock_active: bool = false
 var bg_transparent: bool = false
-var guide_active: bool = false
 var current_canvas_size: Vector2 = Vector2(1200, 800)
 var canvas_size_menu: PopupMenu = null
 var custom_size_dialog: PanelContainer = null
@@ -89,7 +86,6 @@ var sound_active: bool = true
 
 var style_active_snap: StyleBoxFlat = null
 var style_active_lock: StyleBoxFlat = null
-var style_active_guide: StyleBoxFlat = null
 var style_active_bg: StyleBoxFlat = null
 
 func _ready() -> void:
@@ -112,7 +108,6 @@ func _ready() -> void:
 	btn_snap.pressed.connect(_on_snap_pressed)
 	btn_zoom.pressed.connect(func(): _play_click(); zoom_reset_requested.emit())
 	btn_bg.pressed.connect(_on_bg_pressed)
-	btn_guide.pressed.connect(_on_guide_pressed)
 	btn_canvas_size.pressed.connect(_on_canvas_size_btn_pressed)
 	btn_sound.pressed.connect(_on_sound_pressed)
 	btn_templates.pressed.connect(func(): _play_click(); templates_requested.emit())
@@ -123,7 +118,6 @@ func _ready() -> void:
 	update_multi_selection_state([], false)
 	_update_snap_ui()
 	_update_scale_lock_ui()
-	_update_guide_ui()
 	_update_bg_ui()
 	_update_sound_ui()
 
@@ -143,14 +137,6 @@ func _setup_active_styles() -> void:
 	style_active_lock.set_corner_radius_all(6)
 	style_active_lock.shadow_color = Color(0.9, 0.7, 0.1, 0.35)
 	style_active_lock.shadow_size = 4
-
-	style_active_guide = StyleBoxFlat.new()
-	style_active_guide.bg_color = Color(0.2, 0.12, 0.38, 0.95)
-	style_active_guide.border_color = Color(0.72, 0.45, 1.0, 1.0)
-	style_active_guide.set_border_width_all(1)
-	style_active_guide.set_corner_radius_all(6)
-	style_active_guide.shadow_color = Color(0.6, 0.3, 0.9, 0.35)
-	style_active_guide.shadow_size = 4
 
 	style_active_bg = StyleBoxFlat.new()
 	style_active_bg.bg_color = Color(0.18, 0.18, 0.26, 0.95)
@@ -210,21 +196,6 @@ func _update_bg_ui() -> void:
 		btn_bg.text = "배경: 흰색"
 		btn_bg.remove_theme_stylebox_override("normal")
 		btn_bg.remove_theme_color_override("font_color")
-
-func _on_guide_pressed() -> void:
-	guide_active = !guide_active
-	_update_guide_ui()
-	guide_toggled.emit(guide_active)
-
-func _update_guide_ui() -> void:
-	if guide_active:
-		btn_guide.text = "가이드: ON"
-		btn_guide.add_theme_stylebox_override("normal", style_active_guide)
-		btn_guide.add_theme_color_override("font_color", Color(0.88, 0.65, 1.0, 1.0))
-	else:
-		btn_guide.text = "가이드: OFF"
-		btn_guide.remove_theme_stylebox_override("normal")
-		btn_guide.remove_theme_color_override("font_color")
 
 func _play_click() -> void:
 	if SoundManager.instance:
