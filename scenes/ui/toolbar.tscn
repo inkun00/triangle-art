@@ -154,10 +154,10 @@ corner_radius_top_right = 6
 corner_radius_bottom_right = 6
 corner_radius_bottom_left = 6
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_challenge_btn_normal"]
-content_margin_left = 8.0
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_templates_btn_normal"]
+content_margin_left = 10.0
 content_margin_top = 5.0
-content_margin_right = 8.0
+content_margin_right = 10.0
 content_margin_bottom = 5.0
 bg_color = Color(0.32, 0.16, 0.68, 1)
 border_width_left = 1
@@ -173,10 +173,10 @@ shadow_color = Color(0.4, 0.15, 0.8, 0.4)
 shadow_size = 4
 shadow_offset = Vector2(0, 1)
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_challenge_btn_hover"]
-content_margin_left = 8.0
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_templates_btn_hover"]
+content_margin_left = 10.0
 content_margin_top = 5.0
-content_margin_right = 8.0
+content_margin_right = 10.0
 content_margin_bottom = 5.0
 bg_color = Color(0.42, 0.22, 0.85, 1)
 border_width_left = 1
@@ -192,10 +192,10 @@ shadow_color = Color(0.5, 0.25, 0.95, 0.55)
 shadow_size = 7
 shadow_offset = Vector2(0, 2)
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_challenge_btn_pressed"]
-content_margin_left = 8.0
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_templates_btn_pressed"]
+content_margin_left = 10.0
 content_margin_top = 5.0
-content_margin_right = 8.0
+content_margin_right = 10.0
 content_margin_bottom = 5.0
 bg_color = Color(0.24, 0.1, 0.52, 1)
 border_width_left = 1
@@ -468,21 +468,15 @@ layout_mode = 2
 tooltip_text = "효과음 온/오프 토글"
 text = "음향: ON"
 
-[node name="BtnChallenge" type="Button" parent="VBox/HBoxActions"]
+[node name="BtnTemplates" type="Button" parent="VBox/HBoxActions"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(76, 28)
+custom_minimum_size = Vector2(104, 28)
 layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxFlat_challenge_btn_normal")
-theme_override_styles/hover = SubResource("StyleBoxFlat_challenge_btn_hover")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_challenge_btn_pressed")
-tooltip_text = "퍼즐 챌린지 모드: 실루엣을 채워 별 3개를 획득하세요!"
-text = "★ 챌린지"
-
-[node name="OptTemplates" type="OptionButton" parent="VBox/HBoxActions"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(96, 28)
-layout_mode = 2
-tooltip_text = "예제 도안 불러오기"
+theme_override_styles/normal = SubResource("StyleBoxFlat_templates_btn_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_templates_btn_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_templates_btn_pressed")
+tooltip_text = "1단계(초급)부터 3단계(고급)까지 30가지 다양한 도안 갤러리를 엽니다"
+text = "🎨 도안 (30종)"
 
 [node name="BtnSaveProject" type="Button" parent="VBox/HBoxActions"]
 unique_name_in_owner = true

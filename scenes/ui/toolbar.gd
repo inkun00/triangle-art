@@ -34,7 +34,7 @@ signal canvas_size_requested(size: Vector2)
 signal save_project_requested
 signal load_project_requested(json_str: String)
 signal sound_toggled(enabled: bool)
-signal challenge_toggled(enabled: bool)
+signal templates_requested
 signal exhibit_requested
 
 const EXHIBITION_URL: String = "https://samboard.vivasam.com/studentEntry/?brdId=brd-0RKSB9FRGV771"
@@ -54,12 +54,11 @@ const EXHIBITION_URL: String = "https://samboard.vivasam.com/studentEntry/?brdId
 @onready var btn_bg: Button = %BtnBg
 @onready var btn_canvas_size: Button = %BtnCanvasSize
 @onready var btn_sound: Button = %BtnSound
-@onready var btn_challenge: Button = %BtnChallenge
+@onready var btn_templates: Button = %BtnTemplates
 @onready var btn_save_project: Button = %BtnSaveProject
 @onready var btn_load_project: Button = %BtnLoadProject
 @onready var btn_export: Button = %BtnExport
 @onready var btn_exhibit: Button = %BtnExhibit
-@onready var opt_templates: OptionButton = %OptTemplates
 @onready var label_info: Label = %LabelInfo
 @onready var badge_type: PanelContainer = %BadgeType
 @onready var label_type: Label = %LabelType
@@ -87,13 +86,11 @@ var spin_custom_h: SpinBox = null
 var load_project_dialog: PanelContainer = null
 
 var sound_active: bool = true
-var challenge_active: bool = false
 
 var style_active_snap: StyleBoxFlat = null
 var style_active_lock: StyleBoxFlat = null
 var style_active_guide: StyleBoxFlat = null
 var style_active_bg: StyleBoxFlat = null
-var style_active_challenge: StyleBoxFlat = null
 
 func _ready() -> void:
 	_setup_active_styles()
@@ -118,9 +115,8 @@ func _ready() -> void:
 	btn_guide.pressed.connect(_on_guide_pressed)
 	btn_canvas_size.pressed.connect(_on_canvas_size_btn_pressed)
 	btn_sound.pressed.connect(_on_sound_pressed)
-	btn_challenge.pressed.connect(_on_challenge_pressed)
+	btn_templates.pressed.connect(func(): _play_click(); templates_requested.emit())
 
-	_setup_templates_menu()
 	_setup_canvas_size_menu()
 	update_undo_redo_states(false, false)
 	update_selection_state(null)
@@ -130,7 +126,6 @@ func _ready() -> void:
 	_update_guide_ui()
 	_update_bg_ui()
 	_update_sound_ui()
-	_update_challenge_ui()
 
 func _setup_active_styles() -> void:
 	style_active_snap = StyleBoxFlat.new()
@@ -162,27 +157,6 @@ func _setup_active_styles() -> void:
 	style_active_bg.border_color = Color(0.55, 0.65, 0.85, 1.0)
 	style_active_bg.set_border_width_all(1)
 	style_active_bg.set_corner_radius_all(6)
-
-	style_active_challenge = StyleBoxFlat.new()
-	style_active_challenge.bg_color = Color(0.42, 0.18, 0.78, 0.95)
-	style_active_challenge.border_color = Color(0.85, 0.55, 1.0, 1.0)
-	style_active_challenge.set_border_width_all(1)
-	style_active_challenge.set_corner_radius_all(6)
-	style_active_challenge.shadow_color = Color(0.6, 0.25, 0.95, 0.45)
-	style_active_challenge.shadow_size = 6
-
-func _setup_templates_menu() -> void:
-	opt_templates.clear()
-	opt_templates.add_item("도안 선택...")
-	for t_name in TriangleTemplates.get_template_names():
-		opt_templates.add_item("  " + t_name)
-
-	opt_templates.item_selected.connect(func(idx: int):
-		if idx > 0:
-			var chosen: String = opt_templates.get_item_text(idx).strip_edges()
-			template_selected.emit(chosen)
-			opt_templates.select(0)
-	)
 
 func _on_grid_step_pressed() -> void:
 	current_grid_step_idx = (current_grid_step_idx + 1) % GRID_STEPS.size()
@@ -283,24 +257,6 @@ func _update_sound_ui() -> void:
 		btn_sound.text = "음향: ON" if sound_active else "음향: OFF"
 		btn_sound.tooltip_text = "효과음: 켜짐" if sound_active else "효과음: 음소거"
 
-func _on_challenge_pressed() -> void:
-	challenge_active = !challenge_active
-	_update_challenge_ui()
-	challenge_toggled.emit(challenge_active)
-	_play_click()
-
-func _update_challenge_ui() -> void:
-	if btn_challenge:
-		if challenge_active:
-			btn_challenge.text = "★ 챌린지: ON"
-			btn_challenge.add_theme_stylebox_override("normal", style_active_challenge)
-		else:
-			btn_challenge.text = "★ 챌린지"
-			btn_challenge.remove_theme_stylebox_override("normal")
-
-func set_challenge_active(active: bool) -> void:
-	challenge_active = active
-	_update_challenge_ui()
 
 func update_zoom_display(zoom: float) -> void:
 	var percent: int = int(roundf(zoom * 100.0))

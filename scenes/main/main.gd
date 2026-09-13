@@ -8,28 +8,23 @@ const TopToolbar = preload("res://scenes/ui/toolbar.gd")
 const DrawingCanvas = preload("res://scenes/canvas/drawing_canvas.gd")
 const TriangleColorPalette = preload("res://scenes/ui/color_palette.gd")
 const SoundManager = preload("res://scripts/core/sound_manager.gd")
-const PuzzleEvaluator = preload("res://scripts/core/puzzle_evaluator.gd")
 const TriangleTemplates = preload("res://scripts/core/triangle_templates.gd")
-const ChallengeHUD = preload("res://scenes/ui/challenge_hud.gd")
+const TemplateGalleryDialog = preload("res://scenes/ui/template_gallery_dialog.gd")
 const ConfettiParticles = preload("res://scenes/effects/confetti_particles.gd")
 
-## Main Game Controller uniting Canvas, Toolbar, Color Palette, SoundManager, and Puzzle Challenge.
+## Main Game Controller uniting Canvas, Toolbar, Color Palette, SoundManager, and Template Gallery.
 
 @onready var toolbar: TopToolbar = %Toolbar
 @onready var canvas: DrawingCanvas = %DrawingCanvas
 @onready var palette: TriangleColorPalette = %ColorPalette
 @onready var toast_label: Label = %ToastLabel
-@onready var challenge_hud: ChallengeHUD = %ChallengeHUD
+@onready var gallery_dialog: TemplateGalleryDialog = %TemplateGalleryDialog
 @onready var confetti_particles: ConfettiParticles = %ConfettiParticles
 
 var sound_manager: SoundManager = null
 var command_manager: CommandManager = CommandManager.new()
 var is_transparent_bg: bool = false
 var _color_drag_saved_colors: Dictionary = {}
-
-var challenge_mode_active: bool = false
-var current_challenge_name: String = "나비 (Butterfly)"
-var challenge_completed_this_round: bool = false
 
 func _ready() -> void:
 	# 0. Initialize Procedural Sound Manager
@@ -83,7 +78,10 @@ func _ready() -> void:
 		if sound_manager:
 			sound_manager.sound_enabled = enabled
 	)
-	toolbar.challenge_toggled.connect(_on_challenge_toggled)
+	toolbar.templates_requested.connect(func():
+		if gallery_dialog:
+			gallery_dialog.open_gallery()
+	)
 	toolbar.set_canvas_size(canvas.canvas_size)
 
 	# 4. Connect Palette signals
@@ -91,9 +89,10 @@ func _ready() -> void:
 	palette.color_preview.connect(_on_color_preview)
 	palette.outline_remove_requested.connect(_on_outline_remove_requested)
 
-	# 5. Connect Challenge HUD signals
-	challenge_hud.challenge_closed.connect(_on_challenge_closed)
-	challenge_hud.next_challenge_requested.connect(_on_next_challenge_requested)
+	# 5. Connect Template Gallery signals
+	if gallery_dialog:
+		gallery_dialog.template_load_requested.connect(_on_template_load_requested)
+		gallery_dialog.template_guide_requested.connect(_on_template_guide_requested)
 
 	# 6. Initialize with one initial triangle in the center!
 	await get_tree().process_frame
@@ -153,7 +152,6 @@ func _on_command_state_changed() -> void:
 
 func _on_canvas_action_performed(cmd: Variant) -> void:
 	command_manager.push_and_execute(cmd)
-	_update_challenge_evaluation()
 
 func _on_canvas_selection_changed(node: TriangleNode) -> void:
 	toolbar.update_selection_state(node)
@@ -162,38 +160,31 @@ func _on_canvas_selection_changed(node: TriangleNode) -> void:
 
 func _on_canvas_geometry_updated(node: TriangleNode) -> void:
 	toolbar.update_selection_state(node)
-	_update_challenge_evaluation()
 
 func _on_new_triangle() -> void:
 	canvas.add_new_equilateral_triangle()
 	_show_toast("새 정삼각형이 생성되었습니다.")
-	_update_challenge_evaluation()
 
 func _on_duplicate() -> void:
 	var copy = canvas.duplicate_selected()
 	if copy:
 		_show_toast("삼각형이 복제되었습니다.")
-		_update_challenge_evaluation()
 
 func _on_delete() -> void:
 	canvas.delete_selected()
 	_show_toast("삼각형이 삭제되었습니다.")
-	_update_challenge_evaluation()
 
 func _on_rotate_requested(angle_deg: float) -> void:
 	canvas.rotate_selected(angle_deg)
 	_show_toast("삼각형을 %d° 회전했습니다." % int(angle_deg))
-	_update_challenge_evaluation()
 
 func _on_flip_h_requested() -> void:
 	canvas.flip_selected_h()
 	_show_toast("삼각형을 좌우 반전했습니다.")
-	_update_challenge_evaluation()
 
 func _on_flip_v_requested() -> void:
 	canvas.flip_selected_v()
 	_show_toast("삼각형을 상하 반전했습니다.")
-	_update_challenge_evaluation()
 
 func _on_guide_toggled(enabled: bool) -> void:
 	canvas.set_guide_state(enabled)
@@ -210,16 +201,10 @@ func _on_layer_down() -> void:
 func _on_clear_requested() -> void:
 	canvas.clear_all_triangles()
 	_show_toast("캔버스를 모두 비웠습니다.")
-	_update_challenge_evaluation()
 
 func _on_template_selected(t_name: String) -> void:
 	canvas.load_template_triangles(t_name)
 	_show_toast("도안 불러오기 완료: " + t_name)
-	if challenge_mode_active:
-		current_challenge_name = t_name
-		challenge_hud.set_challenge(current_challenge_name)
-		canvas.set_guide_state(true, current_challenge_name)
-		_update_challenge_evaluation()
 
 func _on_undo() -> void:
 	if command_manager.can_undo():
@@ -227,7 +212,6 @@ func _on_undo() -> void:
 		_show_toast("실행 취소 (Undo)")
 		if canvas.selected_triangle and is_instance_valid(canvas.selected_triangle):
 			palette.sync_triangle_colors(canvas.selected_triangle.fill_color, canvas.selected_triangle.outline_color)
-		_update_challenge_evaluation()
 
 func _on_redo() -> void:
 	if command_manager.can_redo():
@@ -235,7 +219,6 @@ func _on_redo() -> void:
 		_show_toast("다시 실행 (Redo)")
 		if canvas.selected_triangle and is_instance_valid(canvas.selected_triangle):
 			palette.sync_triangle_colors(canvas.selected_triangle.fill_color, canvas.selected_triangle.outline_color)
-		_update_challenge_evaluation()
 
 func _on_snap_toggled(enabled: bool) -> void:
 	canvas.snap_enabled = enabled
@@ -265,7 +248,6 @@ func _on_canvas_size_requested(new_size: Vector2) -> void:
 func _on_canvas_size_changed(new_size: Vector2) -> void:
 	toolbar.set_canvas_size(new_size)
 	_show_toast("캔버스 크기가 %d × %d px로 설정되었습니다." % [int(new_size.x), int(new_size.y)])
-	_update_challenge_evaluation()
 
 func _on_color_preview(col: Color, is_outline: bool) -> void:
 	if is_outline:
@@ -308,7 +290,6 @@ func _on_ungroup_requested() -> void:
 func _on_equilateral_requested() -> void:
 	canvas.make_selected_equilateral()
 	_show_toast("정삼각형으로 변환되었습니다.")
-	_update_challenge_evaluation()
 
 func _on_canvas_multi_selection_changed(nodes: Array[TriangleNode]) -> void:
 	toolbar.update_multi_selection_state(nodes, canvas.has_group_in_selection())
@@ -358,60 +339,22 @@ func _on_load_project(json_str: String) -> void:
 	var success: bool = canvas.load_project_json(json_str)
 	if success:
 		_show_toast("프로젝트가 성공적으로 불러와졌습니다!")
-		_update_challenge_evaluation()
 	else:
 		_show_toast("프로젝트 데이터를 읽을 수 없습니다. 올바른 포맷인지 확인해주세요.")
 
 # -----------------------------------------------------------------------------
-# Puzzle / Challenge Gamification Handlers
+# Template Gallery Handlers
 # -----------------------------------------------------------------------------
 
-func _on_challenge_toggled(active: bool) -> void:
-	challenge_mode_active = active
-	if challenge_mode_active:
-		challenge_completed_this_round = false
-		if current_challenge_name.is_empty():
-			current_challenge_name = "나비 (Butterfly)"
-		canvas.set_guide_state(true, current_challenge_name)
-		challenge_hud.set_challenge(current_challenge_name)
-		challenge_hud.visible = true
-		_update_challenge_evaluation()
-		_show_toast("챌린지 모드 시작: " + current_challenge_name + "! 실루엣을 채워 별 3개를 획득하세요.")
-	else:
-		challenge_hud.visible = false
-		canvas.set_guide_state(false)
-		_show_toast("챌린지 모드가 종료되었습니다.")
+func _on_template_load_requested(t_name: String) -> void:
+	canvas.load_template_triangles(t_name)
+	_show_toast("도안 불러오기 완료: " + t_name)
 
-func _on_challenge_closed() -> void:
-	challenge_mode_active = false
-	challenge_hud.visible = false
-	toolbar.set_challenge_active(false)
-	canvas.set_guide_state(false)
-	_show_toast("챌린지 모드가 종료되었습니다.")
-
-func _on_next_challenge_requested() -> void:
-	var all_names: Array[String] = TriangleTemplates.get_template_names()
-	var idx: int = all_names.find(current_challenge_name)
-	if idx == -1:
-		idx = 0
-	current_challenge_name = all_names[(idx + 1) % all_names.size()]
-	canvas.clear_all_triangles()
-	canvas.set_guide_state(true, current_challenge_name)
-	challenge_hud.set_challenge(current_challenge_name)
-	challenge_completed_this_round = false
-	_update_challenge_evaluation()
-	_show_toast("다음 챌린지: " + current_challenge_name)
-
-func _update_challenge_evaluation() -> void:
-	if not challenge_mode_active or current_challenge_name.is_empty() or not challenge_hud:
-		return
-	var template_triangles: Array = TriangleTemplates.get_template_data(current_challenge_name, canvas.canvas_size / 2.0)
-	var eval_res: Dictionary = PuzzleEvaluator.evaluate_accuracy(canvas.triangles, template_triangles)
-	challenge_hud.update_progress(eval_res)
-	if eval_res.get("passed", false) and not challenge_completed_this_round:
-		challenge_completed_this_round = true
-		if confetti_particles:
-			confetti_particles.burst(canvas.size / 2.0, 120)
+func _on_template_guide_requested(t_name: String) -> void:
+	canvas.set_guide_state(true, t_name)
+	toolbar.guide_active = true
+	toolbar._update_guide_ui()
+	_show_toast("따라 그리기 가이드 활성화: " + t_name)
 
 func _show_toast(msg: String) -> void:
 	if not toast_label:

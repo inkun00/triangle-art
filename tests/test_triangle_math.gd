@@ -94,7 +94,7 @@ static func test_point_in_triangle(runner) -> void:
 
 static func test_templates(runner) -> void:
 	var names = TriangleTemplates.get_template_names()
-	runner.assert_eq(names.size(), 8, "Should have 8 template presets")
+	runner.assert_eq(names.size(), 30, "Should have 30 template presets")
 
 	for t_name in names:
 		var items = TriangleTemplates.get_template_data(t_name, Vector2(500, 300))

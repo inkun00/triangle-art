@@ -8,6 +8,7 @@ const TestTriangleNode = preload("res://tests/test_triangle_node.gd")
 const TestPngExport = preload("res://tests/test_png_export.gd")
 const TestSoundManager = preload("res://tests/test_sound_manager.gd")
 const TestPuzzleEvaluator = preload("res://tests/test_puzzle_evaluator.gd")
+const TestTriangleTemplates = preload("res://tests/test_triangle_templates.gd")
 
 var passed_count: int = 0
 var failed_count: int = 0
@@ -38,7 +39,11 @@ func _ready() -> void:
 	print("[Suite] Testing PuzzleEvaluator...")
 	TestPuzzleEvaluator.run(self)
 
-	# 6. PNG Export Tests
+	# 6. Triangle Templates Tests
+	print("[Suite] Testing TriangleTemplates...")
+	TestTriangleTemplates.run(self)
+
+	# 7. PNG Export Tests
 	print("[Suite] Testing PngExport...")
 	await TestPngExport.run(self)
 
