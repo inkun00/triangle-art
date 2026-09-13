@@ -16,3 +16,5 @@ Thumbs.db
 conversation_dump.md
 decoded_conversation.json
 dict_messages.json
+
+.vercel

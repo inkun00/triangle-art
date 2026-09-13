@@ -1,6 +1,4 @@
 {
-  "name": "triangle-art",
-  "outputDirectory": "build/web",
   "cleanUrls": true,
   "headers": [
     {

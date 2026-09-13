@@ -37,8 +37,8 @@
 
 ## 🚀 빠른 시작 (Getting Started)
 
-### 웹에서 플레이
-Vercel에 배포된 라이브 데모에서 브라우저로 즉시 플레이할 수 있습니다.
+### 웹에서 즉시 플레이 (Live Demo)
+👉 **[https://triangle-art.vercel.app](https://triangle-art.vercel.app)** 에서 별도 설치 없이 웹 브라우저로 즉시 플레이할 수 있습니다.
 
 ### 로컬 실행 (Godot 4.x)
 ```bash
