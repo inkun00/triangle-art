@@ -35,6 +35,9 @@ signal save_project_requested
 signal load_project_requested(json_str: String)
 signal sound_toggled(enabled: bool)
 signal challenge_toggled(enabled: bool)
+signal exhibit_requested
+
+const EXHIBITION_URL: String = "https://samboard.vivasam.com/studentEntry/?brdId=brd-0RKSB9FRGV771"
 
 @onready var btn_new: Button = %BtnNew
 @onready var btn_equilateral: Button = %BtnEquilateral
@@ -55,6 +58,7 @@ signal challenge_toggled(enabled: bool)
 @onready var btn_save_project: Button = %BtnSaveProject
 @onready var btn_load_project: Button = %BtnLoadProject
 @onready var btn_export: Button = %BtnExport
+@onready var btn_exhibit: Button = %BtnExhibit
 @onready var opt_templates: OptionButton = %OptTemplates
 @onready var label_info: Label = %LabelInfo
 @onready var badge_type: PanelContainer = %BadgeType
@@ -105,6 +109,7 @@ func _ready() -> void:
 	btn_save_project.pressed.connect(func(): _play_click(); save_project_requested.emit())
 	btn_load_project.pressed.connect(func(): _play_click(); _show_load_project_dialog())
 	btn_export.pressed.connect(func(): _play_click(); export_requested.emit())
+	btn_exhibit.pressed.connect(_on_exhibit_pressed)
 
 	btn_grid_step.pressed.connect(_on_grid_step_pressed)
 	btn_snap.pressed.connect(_on_snap_pressed)
@@ -168,7 +173,7 @@ func _setup_active_styles() -> void:
 
 func _setup_templates_menu() -> void:
 	opt_templates.clear()
-	opt_templates.add_item("도안 불러오기...")
+	opt_templates.add_item("도안 선택...")
 	for t_name in TriangleTemplates.get_template_names():
 		opt_templates.add_item("  " + t_name)
 
@@ -182,7 +187,7 @@ func _setup_templates_menu() -> void:
 func _on_grid_step_pressed() -> void:
 	current_grid_step_idx = (current_grid_step_idx + 1) % GRID_STEPS.size()
 	var step: float = GRID_STEPS[current_grid_step_idx]
-	btn_grid_step.text = "격자: %dpx" % int(step)
+	btn_grid_step.text = "격자 %d" % int(step)
 	grid_step_changed.emit(step)
 
 func _on_snap_pressed() -> void:
@@ -192,11 +197,11 @@ func _on_snap_pressed() -> void:
 
 func _update_snap_ui() -> void:
 	if snap_active:
-		btn_snap.text = "● 스냅: 켜짐"
+		btn_snap.text = "스냅: ON"
 		btn_snap.add_theme_stylebox_override("normal", style_active_snap)
 		btn_snap.add_theme_color_override("font_color", Color(0.3, 0.95, 1.0, 1.0))
 	else:
-		btn_snap.text = "○ 스냅: 꺼짐"
+		btn_snap.text = "스냅: OFF"
 		btn_snap.remove_theme_stylebox_override("normal")
 		btn_snap.remove_theme_color_override("font_color")
 
@@ -239,11 +244,11 @@ func _on_guide_pressed() -> void:
 
 func _update_guide_ui() -> void:
 	if guide_active:
-		btn_guide.text = "● 가이드: 켜짐"
+		btn_guide.text = "가이드: ON"
 		btn_guide.add_theme_stylebox_override("normal", style_active_guide)
 		btn_guide.add_theme_color_override("font_color", Color(0.88, 0.65, 1.0, 1.0))
 	else:
-		btn_guide.text = "○ 가이드: 꺼짐"
+		btn_guide.text = "가이드: OFF"
 		btn_guide.remove_theme_stylebox_override("normal")
 		btn_guide.remove_theme_color_override("font_color")
 
@@ -254,6 +259,17 @@ func _play_click() -> void:
 func _play_delete() -> void:
 	if SoundManager.instance:
 		SoundManager.instance.play_delete()
+
+func _on_exhibit_pressed() -> void:
+	_play_click()
+	exhibit_requested.emit()
+	open_exhibition_url()
+
+func open_exhibition_url() -> void:
+	if OS.has_feature("web"):
+		JavaScriptBridge.eval("window.open('%s', '_blank');" % EXHIBITION_URL)
+	else:
+		OS.shell_open(EXHIBITION_URL)
 
 func _on_sound_pressed() -> void:
 	sound_active = !sound_active
@@ -276,7 +292,7 @@ func _on_challenge_pressed() -> void:
 func _update_challenge_ui() -> void:
 	if btn_challenge:
 		if challenge_active:
-			btn_challenge.text = "★ 챌린지: 켜짐"
+			btn_challenge.text = "★ 챌린지: ON"
 			btn_challenge.add_theme_stylebox_override("normal", style_active_challenge)
 		else:
 			btn_challenge.text = "★ 챌린지"

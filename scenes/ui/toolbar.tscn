@@ -1,4 +1,4 @@
-[gd_scene load_steps=18 format=3]
+[gd_scene load_steps=21 format=3]
 
 [ext_resource type="Script" path="res://scenes/ui/toolbar.gd" id="1_toolbar"]
 
@@ -31,9 +31,9 @@ corner_radius_bottom_right = 5
 corner_radius_bottom_left = 5
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hero_btn_normal"]
-content_margin_left = 12.0
+content_margin_left = 8.0
 content_margin_top = 5.0
-content_margin_right = 12.0
+content_margin_right = 8.0
 content_margin_bottom = 5.0
 bg_color = Color(0.16, 0.42, 0.88, 1)
 border_width_left = 1
@@ -50,9 +50,9 @@ shadow_size = 4
 shadow_offset = Vector2(0, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hero_btn_hover"]
-content_margin_left = 12.0
+content_margin_left = 8.0
 content_margin_top = 5.0
-content_margin_right = 12.0
+content_margin_right = 8.0
 content_margin_bottom = 5.0
 bg_color = Color(0.22, 0.5, 0.98, 1)
 border_width_left = 1
@@ -69,9 +69,9 @@ shadow_size = 7
 shadow_offset = Vector2(0, 2)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hero_btn_pressed"]
-content_margin_left = 12.0
+content_margin_left = 8.0
 content_margin_top = 5.0
-content_margin_right = 12.0
+content_margin_right = 8.0
 content_margin_bottom = 5.0
 bg_color = Color(0.1, 0.3, 0.72, 1)
 border_width_left = 1
@@ -85,9 +85,9 @@ corner_radius_bottom_right = 6
 corner_radius_bottom_left = 6
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_group"]
-content_margin_left = 3.0
+content_margin_left = 4.0
 content_margin_top = 2.0
-content_margin_right = 3.0
+content_margin_right = 4.0
 content_margin_bottom = 2.0
 bg_color = Color(0.06, 0.08, 0.13, 0.85)
 border_width_left = 1
@@ -101,9 +101,9 @@ corner_radius_bottom_right = 7
 corner_radius_bottom_left = 7
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_export_btn_normal"]
-content_margin_left = 12.0
+content_margin_left = 8.0
 content_margin_top = 5.0
-content_margin_right = 12.0
+content_margin_right = 8.0
 content_margin_bottom = 5.0
 bg_color = Color(0.04, 0.52, 0.36, 1)
 border_width_left = 1
@@ -120,9 +120,9 @@ shadow_size = 4
 shadow_offset = Vector2(0, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_export_btn_hover"]
-content_margin_left = 12.0
+content_margin_left = 8.0
 content_margin_top = 5.0
-content_margin_right = 12.0
+content_margin_right = 8.0
 content_margin_bottom = 5.0
 bg_color = Color(0.06, 0.65, 0.46, 1)
 border_width_left = 1
@@ -139,9 +139,9 @@ shadow_size = 7
 shadow_offset = Vector2(0, 2)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_export_btn_pressed"]
-content_margin_left = 12.0
+content_margin_left = 8.0
 content_margin_top = 5.0
-content_margin_right = 12.0
+content_margin_right = 8.0
 content_margin_bottom = 5.0
 bg_color = Color(0.02, 0.38, 0.26, 1)
 border_width_left = 1
@@ -155,9 +155,9 @@ corner_radius_bottom_right = 6
 corner_radius_bottom_left = 6
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_challenge_btn_normal"]
-content_margin_left = 11.0
+content_margin_left = 8.0
 content_margin_top = 5.0
-content_margin_right = 11.0
+content_margin_right = 8.0
 content_margin_bottom = 5.0
 bg_color = Color(0.32, 0.16, 0.68, 1)
 border_width_left = 1
@@ -174,9 +174,9 @@ shadow_size = 4
 shadow_offset = Vector2(0, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_challenge_btn_hover"]
-content_margin_left = 11.0
+content_margin_left = 8.0
 content_margin_top = 5.0
-content_margin_right = 11.0
+content_margin_right = 8.0
 content_margin_bottom = 5.0
 bg_color = Color(0.42, 0.22, 0.85, 1)
 border_width_left = 1
@@ -193,9 +193,9 @@ shadow_size = 7
 shadow_offset = Vector2(0, 2)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_challenge_btn_pressed"]
-content_margin_left = 11.0
+content_margin_left = 8.0
 content_margin_top = 5.0
-content_margin_right = 11.0
+content_margin_right = 8.0
 content_margin_bottom = 5.0
 bg_color = Color(0.24, 0.1, 0.52, 1)
 border_width_left = 1
@@ -203,6 +203,60 @@ border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
 border_color = Color(0.5, 0.28, 0.8, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_exhibit_btn_normal"]
+content_margin_left = 8.0
+content_margin_top = 5.0
+content_margin_right = 8.0
+content_margin_bottom = 5.0
+bg_color = Color(0.72, 0.32, 0.08, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1.0, 0.65, 0.25, 0.95)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+shadow_color = Color(0.6, 0.25, 0.05, 0.35)
+shadow_size = 4
+shadow_offset = Vector2(0, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_exhibit_btn_hover"]
+content_margin_left = 8.0
+content_margin_top = 5.0
+content_margin_right = 8.0
+content_margin_bottom = 5.0
+bg_color = Color(0.85, 0.4, 0.1, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1.0, 0.8, 0.45, 1.0)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+shadow_color = Color(0.7, 0.35, 0.1, 0.5)
+shadow_size = 7
+shadow_offset = Vector2(0, 2)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_exhibit_btn_pressed"]
+content_margin_left = 8.0
+content_margin_top = 5.0
+content_margin_right = 8.0
+content_margin_bottom = 5.0
+bg_color = Color(0.58, 0.24, 0.05, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.85, 0.5, 0.15, 1.0)
 corner_radius_top_left = 6
 corner_radius_top_right = 6
 corner_radius_bottom_right = 6
@@ -258,11 +312,11 @@ theme_override_constants/separation = 6
 
 [node name="HBoxActions" type="HBoxContainer" parent="VBox"]
 layout_mode = 2
-theme_override_constants/separation = 5
+theme_override_constants/separation = 4
 
 [node name="BrandBox" type="HBoxContainer" parent="VBox/HBoxActions"]
 layout_mode = 2
-theme_override_constants/separation = 5
+theme_override_constants/separation = 4
 
 [node name="BrandBadge" type="PanelContainer" parent="VBox/HBoxActions/BrandBox"]
 layout_mode = 2
@@ -271,14 +325,8 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_brand_badge")
 [node name="BrandIcon" type="Label" parent="VBox/HBoxActions/BrandBox/BrandBadge"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.45, 0.75, 1, 1)
-theme_override_font_sizes/font_size = 12
-text = "▲ STUDIO"
-
-[node name="TitleLabel" type="Label" parent="VBox/HBoxActions/BrandBox"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.95, 0.97, 1, 1)
-theme_override_font_sizes/font_size = 14
-text = "Triangle Art"
+theme_override_font_sizes/font_size = 13
+text = "▲ Triangle Art"
 
 [node name="VSeparator" type="VSeparator" parent="VBox/HBoxActions"]
 layout_mode = 2
@@ -286,7 +334,7 @@ theme_override_styles/separator = SubResource("StyleBoxLine_vsep")
 
 [node name="BtnNew" type="Button" parent="VBox/HBoxActions"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(82, 28)
+custom_minimum_size = Vector2(76, 28)
 layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxFlat_hero_btn_normal")
 theme_override_styles/hover = SubResource("StyleBoxFlat_hero_btn_hover")
@@ -304,28 +352,28 @@ theme_override_constants/separation = 2
 
 [node name="BtnEquilateral" type="Button" parent="VBox/HBoxActions/ClusterTransform/HBoxTransform"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(66, 26)
+custom_minimum_size = Vector2(60, 26)
 layout_mode = 2
 tooltip_text = "선택된 삼각형을 정삼각형으로 변환합니다"
-text = "△ 정삼각형"
+text = "△ 정삼각"
 
 [node name="BtnRotate" type="Button" parent="VBox/HBoxActions/ClusterTransform/HBoxTransform"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(56, 26)
+custom_minimum_size = Vector2(52, 26)
 layout_mode = 2
 tooltip_text = "선택된 삼각형을 시계방향으로 45도 회전합니다"
 text = "회전 45°"
 
 [node name="BtnFlipH" type="Button" parent="VBox/HBoxActions/ClusterTransform/HBoxTransform"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(46, 26)
+custom_minimum_size = Vector2(44, 26)
 layout_mode = 2
 tooltip_text = "선택된 삼각형을 좌우 반전합니다"
 text = "↔ 좌우"
 
 [node name="BtnFlipV" type="Button" parent="VBox/HBoxActions/ClusterTransform/HBoxTransform"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(46, 26)
+custom_minimum_size = Vector2(44, 26)
 layout_mode = 2
 tooltip_text = "선택된 삼각형을 상하 반전합니다"
 text = "↕ 상하"
@@ -340,21 +388,21 @@ theme_override_constants/separation = 2
 
 [node name="BtnUndo" type="Button" parent="VBox/HBoxActions/ClusterHistory/HBoxHistory"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(56, 26)
+custom_minimum_size = Vector2(52, 26)
 layout_mode = 2
 tooltip_text = "실행 취소 (Ctrl+Z)"
 text = "실행취소"
 
 [node name="BtnRedo" type="Button" parent="VBox/HBoxActions/ClusterHistory/HBoxHistory"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(56, 26)
+custom_minimum_size = Vector2(52, 26)
 layout_mode = 2
 tooltip_text = "다시 실행 (Ctrl+Y)"
 text = "다시실행"
 
 [node name="BtnClear" type="Button" parent="VBox/HBoxActions/ClusterHistory/HBoxHistory"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(56, 26)
+custom_minimum_size = Vector2(52, 26)
 layout_mode = 2
 tooltip_text = "캔버스의 모든 삼각형을 삭제합니다"
 text = "전체삭제"
@@ -369,42 +417,42 @@ theme_override_constants/separation = 2
 
 [node name="BtnGridStep" type="Button" parent="VBox/HBoxActions/ClusterView/HBoxView"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(66, 26)
+custom_minimum_size = Vector2(60, 26)
 layout_mode = 2
 tooltip_text = "그리드 격자 단위를 순환 변경합니다 (40px / 20px / 10px / 5px)"
-text = "격자: 40px"
+text = "격자 40"
 
 [node name="BtnSnap" type="Button" parent="VBox/HBoxActions/ClusterView/HBoxView"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(68, 26)
+custom_minimum_size = Vector2(60, 26)
 layout_mode = 2
 tooltip_text = "격자 및 오브젝트 자석 스냅을 토글합니다"
-text = "스냅: 꺼짐"
+text = "스냅: OFF"
 
 [node name="BtnZoom" type="Button" parent="VBox/HBoxActions/ClusterView/HBoxView"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(60, 26)
+custom_minimum_size = Vector2(54, 26)
 layout_mode = 2
 tooltip_text = "화면 줌 배율입니다. 클릭하면 100%로 리셋됩니다 (마우스 휠로 조절)"
 text = "줌: 100%"
 
 [node name="BtnGuide" type="Button" parent="VBox/HBoxActions/ClusterView/HBoxView"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(74, 26)
+custom_minimum_size = Vector2(64, 26)
 layout_mode = 2
 tooltip_text = "따라 그리기 실루엣 가이드 온오프"
-text = "가이드: 꺼짐"
+text = "가이드: OFF"
 
 [node name="BtnBg" type="Button" parent="VBox/HBoxActions/ClusterView/HBoxView"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(68, 26)
+custom_minimum_size = Vector2(60, 26)
 layout_mode = 2
 tooltip_text = "내보내기 배경 색상 (흰색 / 투명)"
 text = "배경: 흰색"
 
 [node name="BtnCanvasSize" type="Button" parent="VBox/HBoxActions/ClusterView/HBoxView"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(92, 26)
+custom_minimum_size = Vector2(82, 26)
 layout_mode = 2
 tooltip_text = "캔버스 도화지 크기 설정 (프리셋 및 가로/세로 직접 입력)"
 text = "1200×800"
@@ -415,14 +463,14 @@ size_flags_horizontal = 3
 
 [node name="BtnSound" type="Button" parent="VBox/HBoxActions"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(62, 28)
+custom_minimum_size = Vector2(56, 28)
 layout_mode = 2
 tooltip_text = "효과음 온/오프 토글"
 text = "음향: ON"
 
 [node name="BtnChallenge" type="Button" parent="VBox/HBoxActions"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(86, 28)
+custom_minimum_size = Vector2(76, 28)
 layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxFlat_challenge_btn_normal")
 theme_override_styles/hover = SubResource("StyleBoxFlat_challenge_btn_hover")
@@ -432,33 +480,43 @@ text = "★ 챌린지"
 
 [node name="OptTemplates" type="OptionButton" parent="VBox/HBoxActions"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(118, 28)
+custom_minimum_size = Vector2(96, 28)
 layout_mode = 2
 tooltip_text = "예제 도안 불러오기"
 
 [node name="BtnSaveProject" type="Button" parent="VBox/HBoxActions"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(64, 28)
+custom_minimum_size = Vector2(52, 28)
 layout_mode = 2
 tooltip_text = "프로젝트 파일로 저장합니다 (.triart / Ctrl+S)"
 text = "저장"
 
 [node name="BtnLoadProject" type="Button" parent="VBox/HBoxActions"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(64, 28)
+custom_minimum_size = Vector2(52, 28)
 layout_mode = 2
 tooltip_text = "저장된 프로젝트 파일을 열거나 붙여넣습니다 (.triart / Ctrl+O)"
 text = "열기"
 
 [node name="BtnExport" type="Button" parent="VBox/HBoxActions"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(80, 28)
+custom_minimum_size = Vector2(72, 28)
 layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxFlat_export_btn_normal")
 theme_override_styles/hover = SubResource("StyleBoxFlat_export_btn_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_export_btn_pressed")
 tooltip_text = "현재 작품을 고화질 PNG 이미지로 저장합니다"
 text = "PNG 저장"
+
+[node name="BtnExhibit" type="Button" parent="VBox/HBoxActions"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(72, 28)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_exhibit_btn_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_exhibit_btn_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_exhibit_btn_pressed")
+tooltip_text = "비바샘 삼보드에 내 작품을 전시합니다 (새 창 열기)"
+text = "전시하기"
 
 [node name="RibbonContainer" type="PanelContainer" parent="VBox"]
 layout_mode = 2

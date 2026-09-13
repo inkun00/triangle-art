@@ -78,6 +78,7 @@ func _ready() -> void:
 	toolbar.save_project_requested.connect(_on_save_project)
 	toolbar.load_project_requested.connect(_on_load_project)
 	toolbar.export_requested.connect(_on_export)
+	toolbar.exhibit_requested.connect(func(): _show_toast("비바샘 삼보드 전시관으로 이동합니다..."))
 	toolbar.sound_toggled.connect(func(enabled: bool):
 		if sound_manager:
 			sound_manager.sound_enabled = enabled
