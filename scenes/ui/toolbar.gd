@@ -37,22 +37,15 @@ signal sound_toggled(enabled: bool)
 signal challenge_toggled(enabled: bool)
 
 @onready var btn_new: Button = %BtnNew
-@onready var btn_duplicate: Button = %BtnDuplicate
-@onready var btn_delete: Button = %BtnDelete
+@onready var btn_equilateral: Button = %BtnEquilateral
 @onready var btn_rotate: Button = %BtnRotate
 @onready var btn_flip_h: Button = %BtnFlipH
 @onready var btn_flip_v: Button = %BtnFlipV
-@onready var btn_equilateral: Button = %BtnEquilateral
-@onready var btn_layer_up: Button = %BtnLayerUp
-@onready var btn_layer_down: Button = %BtnLayerDown
-@onready var btn_group: Button = %BtnGroup
-@onready var btn_ungroup: Button = %BtnUngroup
 @onready var btn_undo: Button = %BtnUndo
 @onready var btn_redo: Button = %BtnRedo
 @onready var btn_clear: Button = %BtnClear
 @onready var btn_grid_step: Button = %BtnGridStep
 @onready var btn_snap: Button = %BtnSnap
-@onready var btn_scale_lock: Button = %BtnScaleLock
 @onready var btn_zoom: Button = %BtnZoom
 @onready var btn_guide: Button = %BtnGuide
 @onready var btn_bg: Button = %BtnBg
@@ -66,6 +59,15 @@ signal challenge_toggled(enabled: bool)
 @onready var label_info: Label = %LabelInfo
 @onready var badge_type: PanelContainer = %BadgeType
 @onready var label_type: Label = %LabelType
+
+# Compatibility references for removed toolbar buttons (now in right-click context menu)
+var btn_duplicate: Button = null
+var btn_delete: Button = null
+var btn_layer_up: Button = null
+var btn_layer_down: Button = null
+var btn_group: Button = null
+var btn_ungroup: Button = null
+var btn_scale_lock: Button = null
 
 const GRID_STEPS: Array[float] = [40.0, 20.0, 10.0, 5.0]
 var current_grid_step_idx: int = 0
@@ -93,16 +95,10 @@ func _ready() -> void:
 	_setup_active_styles()
 
 	btn_new.pressed.connect(func(): _play_click(); new_triangle_requested.emit())
-	btn_duplicate.pressed.connect(func(): _play_click(); duplicate_requested.emit())
-	btn_delete.pressed.connect(func(): _play_delete(); delete_requested.emit())
+	btn_equilateral.pressed.connect(func(): _play_click(); equilateral_requested.emit())
 	btn_rotate.pressed.connect(func(): _play_click(); rotate_requested.emit(45.0))
 	btn_flip_h.pressed.connect(func(): _play_click(); flip_h_requested.emit())
 	btn_flip_v.pressed.connect(func(): _play_click(); flip_v_requested.emit())
-	btn_equilateral.pressed.connect(func(): _play_click(); equilateral_requested.emit())
-	btn_layer_up.pressed.connect(func(): _play_click(); layer_up_requested.emit())
-	btn_layer_down.pressed.connect(func(): _play_click(); layer_down_requested.emit())
-	btn_group.pressed.connect(func(): _play_click(); group_requested.emit())
-	btn_ungroup.pressed.connect(func(): _play_click(); ungroup_requested.emit())
 	btn_undo.pressed.connect(func(): _play_click(); undo_requested.emit())
 	btn_redo.pressed.connect(func(): _play_click(); redo_requested.emit())
 	btn_clear.pressed.connect(func(): _play_delete(); clear_requested.emit())
@@ -112,7 +108,6 @@ func _ready() -> void:
 
 	btn_grid_step.pressed.connect(_on_grid_step_pressed)
 	btn_snap.pressed.connect(_on_snap_pressed)
-	btn_scale_lock.pressed.connect(_on_scale_lock_pressed)
 	btn_zoom.pressed.connect(func(): _play_click(); zoom_reset_requested.emit())
 	btn_bg.pressed.connect(_on_bg_pressed)
 	btn_guide.pressed.connect(_on_guide_pressed)
@@ -305,32 +300,26 @@ func update_undo_redo_states(can_undo: bool, can_redo: bool) -> void:
 	btn_undo.disabled = !can_undo
 	btn_redo.disabled = !can_redo
 
-func update_multi_selection_state(selected: Array[TriangleNode], has_group: bool) -> void:
+func update_multi_selection_state(selected: Array[TriangleNode], _has_group: bool) -> void:
 	var count: int = selected.size()
-	btn_group.disabled = (count < 2)
-	btn_ungroup.disabled = (!has_group)
 	if count > 1:
 		if label_type:
 			label_type.text = "%d개 다중 선택" % count
 			label_type.add_theme_color_override("font_color", Color(1.0, 0.7, 0.3, 1.0))
-		label_info.text = "%d개의 삼각형이 선택되었습니다. 일괄 이동, 색상 일괄 변경, 그룹화(Ctrl+G)가 가능합니다." % count
+		label_info.text = "%d개의 삼각형이 선택되었습니다. 마우스 우클릭으로 그룹화(Ctrl+G), 복제, 삭제, 순서 변경이 가능합니다." % count
 
 func update_selection_state(triangle: TriangleNode) -> void:
 	var has_sel: bool = (triangle != null and is_instance_valid(triangle))
-	btn_duplicate.disabled = !has_sel
-	btn_delete.disabled = !has_sel
 	btn_rotate.disabled = !has_sel
 	btn_flip_h.disabled = !has_sel
 	btn_flip_v.disabled = !has_sel
 	btn_equilateral.disabled = !has_sel
-	btn_layer_up.disabled = !has_sel
-	btn_layer_down.disabled = !has_sel
 
 	if not has_sel:
 		if label_type:
 			label_type.text = "대기 중"
 			label_type.add_theme_color_override("font_color", Color(0.5, 0.6, 0.75, 1.0))
-		label_info.text = "삼각형을 클릭하여 선택하거나 + 새 삼각형을 만드세요."
+		label_info.text = "삼각형을 클릭하여 선택하거나 + 새 삼각형을 만드세요. (마우스 우클릭: 상세 메뉴)"
 		return
 
 	var info = TriangleMath.classify_triangle(triangle.vertex_a, triangle.vertex_b, triangle.vertex_c)

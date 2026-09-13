@@ -896,6 +896,8 @@ func _show_context_menu(global_pos: Vector2) -> void:
 		context_menu.add_item("실행 취소 (Ctrl+Z)", MenuAction.UNDO)
 		context_menu.add_item("다시 실행 (Ctrl+Y)", MenuAction.REDO)
 		context_menu.add_separator()
+		context_menu.add_item("비율 고정: " + ("켜짐" if is_scale_locked else "꺼짐"), MenuAction.TOGGLE_SCALE_LOCK)
+		context_menu.add_separator()
 		context_menu.add_item("캔버스 전체 삭제", MenuAction.CLEAR_ALL)
 
 	context_menu.reset_size()
