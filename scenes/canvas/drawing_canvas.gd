@@ -1161,7 +1161,7 @@ func _show_context_menu(global_pos: Vector2) -> void:
 		context_menu.add_item("크기 축소 (-20%)", MenuAction.SCALE_DOWN)
 		context_menu.add_item("비율 고정: " + ("켜짐" if is_scale_locked else "꺼짐"), MenuAction.TOGGLE_SCALE_LOCK)
 		context_menu.add_separator()
-		context_menu.add_item("✕ 테두리 삭제 (외곽선 없음)", MenuAction.REMOVE_OUTLINE)
+		context_menu.add_item("× 테두리선 삭제 (외곽선 없음)", MenuAction.REMOVE_OUTLINE)
 	else:
 		context_menu.add_item("+ 새 정삼각형 생성", MenuAction.NEW_TRIANGLE)
 		context_menu.add_separator()

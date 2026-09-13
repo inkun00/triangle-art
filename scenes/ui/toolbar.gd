@@ -507,7 +507,7 @@ func _show_load_project_dialog() -> void:
 	title_bar.add_child(lbl_title)
 
 	var btn_x: Button = Button.new()
-	btn_x.text = "✕"
+	btn_x.text = "×"
 	btn_x.custom_minimum_size = Vector2(28, 24)
 	btn_x.pressed.connect(func(): load_project_dialog.queue_free())
 	title_bar.add_child(btn_x)

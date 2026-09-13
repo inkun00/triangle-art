@@ -27,7 +27,25 @@ func _ready() -> void:
 	tab_stage2.pressed.connect(func(): _set_filter(2))
 	tab_stage3.pressed.connect(func(): _set_filter(3))
 
+	tab_stage1.icon = _create_circle_icon(Color("#22C55E"), 5)
+	tab_stage2.icon = _create_circle_icon(Color("#F59E0B"), 5)
+	tab_stage3.icon = _create_circle_icon(Color("#EF4444"), 5)
+
 	_rebuild_cards()
+
+func _create_circle_icon(color: Color, radius: int) -> ImageTexture:
+	var size: int = radius * 2 + 2
+	var img: Image = Image.create(size, size, false, Image.FORMAT_RGBA8)
+	var center: Vector2 = Vector2(size * 0.5, size * 0.5)
+	for y in range(size):
+		for x in range(size):
+			var dist: float = center.distance_to(Vector2(x + 0.5, y + 0.5))
+			if dist <= radius:
+				img.set_pixel(x, y, color)
+			elif dist <= radius + 0.9:
+				var alpha: float = 1.0 - (dist - radius)
+				img.set_pixel(x, y, Color(color.r, color.g, color.b, color.a * alpha))
+	return ImageTexture.create_from_image(img)
 
 func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.is_pressed():

@@ -87,7 +87,7 @@ theme_override_constants/separation = 2
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.98, 1, 1)
 theme_override_font_sizes/font_size = 17
-text = "🎨 삼각형 도안 갤러리 (총 30종)"
+text = "삼각형 도안 갤러리 (총 30종)"
 
 [node name="Subtitle" type="Label" parent="CenterContainer/MainPanel/VBox/Header/TitleBox"]
 layout_mode = 2
@@ -103,10 +103,10 @@ size_flags_horizontal = 3
 unique_name_in_owner = true
 custom_minimum_size = Vector2(34, 34)
 layout_mode = 2
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 16
 theme_override_styles/normal = SubResource("StyleBoxFlat_close_btn")
 tooltip_text = "닫기 (ESC)"
-text = "✕"
+text = "×"
 
 [node name="HSeparator" type="HSeparator" parent="CenterContainer/MainPanel/VBox"]
 layout_mode = 2
@@ -126,19 +126,19 @@ text = "전체 (30)"
 unique_name_in_owner = true
 custom_minimum_size = Vector2(130, 30)
 layout_mode = 2
-text = "🟢 1단계: 초급 (10)"
+text = "1단계: 초급 (10)"
 
 [node name="TabStage2" type="Button" parent="CenterContainer/MainPanel/VBox/FilterBar"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(130, 30)
 layout_mode = 2
-text = "🟡 2단계: 중급 (10)"
+text = "2단계: 중급 (10)"
 
 [node name="TabStage3" type="Button" parent="CenterContainer/MainPanel/VBox/FilterBar"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(130, 30)
 layout_mode = 2
-text = "🔴 3단계: 고급 (10)"
+text = "3단계: 고급 (10)"
 
 [node name="FilterSpacer" type="Control" parent="CenterContainer/MainPanel/VBox/FilterBar"]
 layout_mode = 2
