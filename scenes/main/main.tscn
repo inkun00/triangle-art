@@ -56,6 +56,7 @@ unique_name_in_owner = true
 layout_mode = 2
 
 [node name="PaletteContainer" type="PanelContainer" parent="."]
+unique_name_in_owner = true
 z_index = 25
 layout_mode = 1
 anchors_preset = 7
@@ -71,9 +72,15 @@ grow_horizontal = 2
 grow_vertical = 0
 theme_override_styles/panel = SubResource("StyleBoxFlat_palette_bg")
 
-[node name="ColorPalette" parent="PaletteContainer" instance=ExtResource("4_palette")]
+[node name="ScrollPalette" type="ScrollContainer" parent="PaletteContainer"]
+layout_mode = 2
+horizontal_scroll_mode = 1
+vertical_scroll_mode = 0
+
+[node name="ColorPalette" parent="PaletteContainer/ScrollPalette" instance=ExtResource("4_palette")]
 unique_name_in_owner = true
 layout_mode = 2
+size_flags_horizontal = 3
 
 [node name="ToastLabel" type="Label" parent="."]
 z_index = 40

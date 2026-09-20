@@ -723,3 +723,12 @@ func _refresh_custom_swatches() -> void:
 
 		custom_grid.add_child(btn)
 		custom_buttons.append(btn)
+
+func set_compact_mode(is_compact: bool) -> void:
+	for btn in buttons:
+		if is_instance_valid(btn):
+			btn.custom_minimum_size = Vector2(28, 28) if is_compact else Vector2(26, 26)
+	for btn in custom_buttons:
+		if is_instance_valid(btn):
+			btn.custom_minimum_size = Vector2(24, 24) if is_compact else Vector2(20, 20)
+

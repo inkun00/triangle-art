@@ -60,6 +60,8 @@ const EXHIBITION_URL: String = "https://samboard.vivasam.com/studentEntry/?brdId
 @onready var label_info: Label = %LabelInfo
 @onready var badge_type: PanelContainer = %BadgeType
 @onready var label_type: Label = %LabelType
+@onready var label_tips: Label = %LabelTips if has_node("%LabelTips") else null
+
 
 # Compatibility references for removed toolbar buttons (now in right-click context menu)
 var btn_duplicate: Button = null
@@ -561,3 +563,11 @@ func _show_load_project_dialog() -> void:
 	get_tree().root.add_child(load_project_dialog)
 	var vp: Vector2 = get_viewport_rect().size
 	load_project_dialog.position = (vp - Vector2(480, 340)) / 2.0
+
+func set_compact_mode(is_compact: bool) -> void:
+	if label_tips:
+		if is_compact:
+			label_tips.text = "TIP: 두 번 터치(메뉴) · 두 손가락(줌/이동)"
+		else:
+			label_tips.text = "TIP: 우클릭(복제/삭제/순서/그룹/비율) · 휠(줌) · Space/휠드래그(이동) · Shift(비율고정)"
+

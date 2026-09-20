@@ -17,9 +17,11 @@ const ConfettiParticles = preload("res://scenes/effects/confetti_particles.gd")
 @onready var toolbar: TopToolbar = %Toolbar
 @onready var canvas: DrawingCanvas = %DrawingCanvas
 @onready var palette: TriangleColorPalette = %ColorPalette
+@onready var palette_container: PanelContainer = %PaletteContainer if has_node("%PaletteContainer") else null
 @onready var toast_label: Label = %ToastLabel
 @onready var gallery_dialog: TemplateGalleryDialog = %TemplateGalleryDialog
 @onready var confetti_particles: ConfettiParticles = %ConfettiParticles
+
 
 var sound_manager: SoundManager = null
 var command_manager: CommandManager = CommandManager.new()
@@ -92,7 +94,13 @@ func _ready() -> void:
 	if gallery_dialog:
 		gallery_dialog.template_load_requested.connect(_on_template_load_requested)
 
-	# 6. Initialize with one initial triangle in the center!
+	# 6. Responsive UI & Viewport Scaling
+	if get_tree() and get_tree().root:
+		get_tree().root.size_changed.connect(_on_root_size_changed)
+	resized.connect(_on_root_size_changed)
+	_update_responsive_layout()
+
+	# 7. Initialize with one initial triangle in the center!
 	await get_tree().process_frame
 	canvas.add_new_equilateral_triangle()
 
@@ -382,3 +390,105 @@ func _show_toast(msg: String) -> void:
 	var tween: Tween = create_tween()
 	tween.tween_interval(2.5)
 	tween.tween_property(toast_label, "modulate:a", 0.0, 0.8)
+
+# -----------------------------------------------------------------------------
+# Responsive Layout & Mobile UI Adaptation
+# -----------------------------------------------------------------------------
+
+func is_mobile_device() -> bool:
+	if OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios"):
+		return true
+	if OS.has_feature("web"):
+		var ua_var = JavaScriptBridge.eval("navigator.userAgent")
+		if ua_var != null:
+			var ua: String = str(ua_var).to_lower()
+			if "mobi" in ua or "android" in ua or "iphone" in ua or "ipod" in ua:
+				return true
+			if "ipad" in ua:
+				return true
+			if "macintosh" in ua:
+				var touch_pts = JavaScriptBridge.eval("navigator.maxTouchPoints")
+				if touch_pts != null and int(touch_pts) > 1:
+					return true
+	return false
+
+func should_use_compact_ui() -> bool:
+	if is_mobile_device():
+		return true
+	var win_size: Vector2i = DisplayServer.window_get_size()
+	if win_size.x > 0 and win_size.y > 0:
+		if win_size.x < 750 or float(win_size.x) / float(win_size.y) < 0.9:
+			return true
+	return false
+
+func _on_root_size_changed() -> void:
+	_update_responsive_layout()
+
+func _update_responsive_layout() -> void:
+	var compact: bool = should_use_compact_ui()
+	var target_scale: Vector2i = Vector2i(1600, 900)
+	
+	if compact:
+		var is_portrait: bool = false
+		if OS.has_feature("web"):
+			var iw = JavaScriptBridge.eval("window.innerWidth")
+			var ih = JavaScriptBridge.eval("window.innerHeight")
+			if iw != null and ih != null and float(ih) > 0:
+				is_portrait = float(ih) > float(iw)
+			else:
+				var ws = DisplayServer.window_get_size()
+				is_portrait = ws.y > ws.x
+		else:
+			var ws = DisplayServer.window_get_size()
+			is_portrait = ws.y > ws.x
+		
+		target_scale = Vector2i(540, 960) if is_portrait else Vector2i(960, 540)
+	
+	if get_tree() and get_tree().root:
+		if get_tree().root.content_scale_size != target_scale:
+			get_tree().root.content_scale_size = target_scale
+	
+	_apply_responsive_ui(compact)
+
+func _apply_responsive_ui(compact: bool) -> void:
+	if palette_container:
+		if compact:
+			palette_container.anchor_left = 0.0
+			palette_container.anchor_right = 1.0
+			palette_container.offset_left = 8.0
+			palette_container.offset_right = -8.0
+			palette_container.offset_top = -98.0
+			palette_container.offset_bottom = -8.0
+		else:
+			palette_container.anchor_left = 0.5
+			palette_container.anchor_right = 0.5
+			palette_container.offset_left = -445.0
+			palette_container.offset_right = 445.0
+			palette_container.offset_top = -94.0
+			palette_container.offset_bottom = -12.0
+	
+	if toast_label:
+		if compact:
+			toast_label.anchor_left = 0.0
+			toast_label.anchor_right = 1.0
+			toast_label.offset_left = 16.0
+			toast_label.offset_right = -16.0
+			toast_label.offset_top = -145.0
+			toast_label.offset_bottom = -105.0
+		else:
+			toast_label.anchor_left = 0.5
+			toast_label.anchor_right = 0.5
+			toast_label.offset_left = -300.0
+			toast_label.offset_right = 300.0
+			toast_label.offset_top = -140.0
+			toast_label.offset_bottom = -105.0
+	
+	if toolbar and toolbar.has_method("set_compact_mode"):
+		toolbar.set_compact_mode(compact)
+	
+	if palette and palette.has_method("set_compact_mode"):
+		palette.set_compact_mode(compact)
+	
+	if canvas and is_inside_tree():
+		canvas.call_deferred("fit_canvas_in_view")
+

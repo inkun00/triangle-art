@@ -10,6 +10,8 @@ const TestSoundManager = preload("res://tests/test_sound_manager.gd")
 const TestPuzzleEvaluator = preload("res://tests/test_puzzle_evaluator.gd")
 const TestTriangleTemplates = preload("res://tests/test_triangle_templates.gd")
 const TestGroupOperations = preload("res://tests/test_group_operations.gd")
+const TestResponsiveUI = preload("res://tests/test_responsive_ui.gd")
+
 
 var passed_count: int = 0
 var failed_count: int = 0
@@ -51,6 +53,11 @@ func _ready() -> void:
 	# 8. PNG Export Tests
 	print("[Suite] Testing PngExport...")
 	await TestPngExport.run(self)
+
+	# 9. Responsive UI Tests
+	print("[Suite] Testing ResponsiveUI...")
+	TestResponsiveUI.run(self)
+
 
 	# Summary
 	print("\n==================================================")

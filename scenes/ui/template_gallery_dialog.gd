@@ -30,7 +30,29 @@ func _ready() -> void:
 	tab_stage2.icon = _create_circle_icon(Color("#F59E0B"), 5)
 	tab_stage3.icon = _create_circle_icon(Color("#EF4444"), 5)
 
+	resized.connect(_update_responsive_layout)
+	_update_responsive_layout()
 	_rebuild_cards()
+
+func _update_responsive_layout() -> void:
+	if not is_inside_tree():
+		return
+	var vp_size: Vector2 = get_viewport_rect().size
+	if vp_size.x <= 0 or vp_size.y <= 0:
+		return
+	var panel: PanelContainer = get_node_or_null("CenterContainer/MainPanel") as PanelContainer
+	if panel:
+		var target_w: float = clampf(vp_size.x - 20.0, 300.0, 950.0)
+		var target_h: float = clampf(vp_size.y - 30.0, 340.0, 620.0)
+		panel.custom_minimum_size = Vector2(target_w, target_h)
+	if grid_container:
+		if vp_size.x < 520.0:
+			grid_container.columns = 1
+		elif vp_size.x < 820.0:
+			grid_container.columns = 2
+		else:
+			grid_container.columns = 3
+
 
 func _create_circle_icon(color: Color, radius: int) -> ImageTexture:
 	var size: int = radius * 2 + 2
@@ -63,7 +85,9 @@ func _unhandled_key_input(event: InputEvent) -> void:
 
 func open_gallery() -> void:
 	visible = true
+	_update_responsive_layout()
 	_set_filter(0)
+
 
 func _on_close_pressed() -> void:
 	visible = false
