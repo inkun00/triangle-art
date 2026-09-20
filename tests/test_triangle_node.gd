@@ -32,6 +32,7 @@ static func run(runner) -> void:
 	test_large_triangle_top_clipping_flip(runner)
 	test_corner_rotation_drag(runner)
 	test_zoom_adaptive_hit_radius(runner)
+	test_triangle_double_click_and_touch(runner)
 
 static func test_triangle_cloning(runner) -> void:
 	var t: TriangleNode = TriangleNode.new()
@@ -684,5 +685,162 @@ static func test_zoom_adaptive_hit_radius(runner) -> void:
 	runner.assert_eq(rad_half, 44.0, "Hit radius at zoom 0.5 should be 44.0 to preserve screen-space size")
 	t.free()
 
+static func test_triangle_double_click_and_touch(runner) -> void:
+	var canvas_scene = load("res://scenes/canvas/drawing_canvas.tscn")
+	var canvas = canvas_scene.instantiate()
+	runner.add_child(canvas)
 
+	var t1: TriangleNode = TriangleNode.new()
+	t1.position = Vector2(300, 300)
+	t1.vertex_a = Vector2(0, -50)
+	t1.vertex_b = Vector2(-50, 40)
+	t1.vertex_c = Vector2(50, 40)
+	canvas.add_triangle_node(t1)
 
+	var t1_click_pos: Vector2 = canvas.world_to_canvas(t1.position + t1.get_centroid())
+
+	var menu_state = {"count": 0, "last_tri": null}
+	canvas.context_menu_opened.connect(func(tri: TriangleNode, _pos: Vector2):
+		menu_state["count"] += 1
+		menu_state["last_tri"] = tri
+	)
+
+	# 1. Test Mouse Left Double-Click with mb.double_click = true
+	var mb_dc = InputEventMouseButton.new()
+	mb_dc.button_index = MOUSE_BUTTON_LEFT
+	mb_dc.pressed = true
+	mb_dc.double_click = true
+	mb_dc.position = t1_click_pos
+	mb_dc.global_position = t1_click_pos
+	canvas._gui_input(mb_dc)
+
+	runner.assert_eq(menu_state["count"], 1, "Mouse double-click with double_click=true should open context menu")
+	runner.assert_eq(menu_state["last_tri"], t1, "Context menu opened should target t1")
+	runner.assert_eq(canvas.selected_triangle, t1, "t1 should be selected after double click")
+	runner.assert_eq(t1.position, Vector2(300, 300), "Double click should not displace triangle position")
+	canvas.context_menu.hide()
+
+	# 2. Test Mouse Left Double-Click with consecutive rapid clicks (<350ms)
+	canvas.select_triangle(null)
+	canvas.last_popup_trigger_time_msec = 0
+	canvas.last_mouse_click_time_msec = 0
+
+	var mb1_down = InputEventMouseButton.new()
+	mb1_down.button_index = MOUSE_BUTTON_LEFT
+	mb1_down.pressed = true
+	mb1_down.double_click = false
+	mb1_down.position = t1_click_pos
+	mb1_down.global_position = t1_click_pos
+	canvas._gui_input(mb1_down)
+
+	var mb1_up = InputEventMouseButton.new()
+	mb1_up.button_index = MOUSE_BUTTON_LEFT
+	mb1_up.pressed = false
+	mb1_up.double_click = false
+	mb1_up.position = t1_click_pos
+	mb1_up.global_position = t1_click_pos
+	canvas._gui_input(mb1_up)
+
+	runner.assert_eq(menu_state["count"], 1, "First single click should not trigger context menu")
+
+	# Second click within rapid threshold (simulating rapid consecutive click on desktop/web)
+	var mb2_down = InputEventMouseButton.new()
+	mb2_down.button_index = MOUSE_BUTTON_LEFT
+	mb2_down.pressed = true
+	mb2_down.double_click = false
+	mb2_down.position = t1_click_pos + Vector2(2, 1)
+	mb2_down.global_position = t1_click_pos + Vector2(2, 1)
+	canvas._gui_input(mb2_down)
+
+	runner.assert_eq(menu_state["count"], 2, "Second rapid click should trigger double click context menu")
+	runner.assert_eq(menu_state["last_tri"], t1, "Context menu should target t1 on second click")
+	runner.assert_eq(t1.position, Vector2(300, 300), "Consecutive clicks should not move triangle")
+	canvas.context_menu.hide()
+
+	# 3. Test Tablet Screen Touch with st.double_tap = true
+	canvas.select_triangle(null)
+	canvas.last_popup_trigger_time_msec = 0
+
+	var st_dt = InputEventScreenTouch.new()
+	st_dt.index = 0
+	st_dt.pressed = true
+	st_dt.double_tap = true
+	st_dt.position = t1_click_pos
+	canvas._gui_input(st_dt)
+
+	runner.assert_eq(menu_state["count"], 3, "ScreenTouch with double_tap=true should open context menu")
+	runner.assert_eq(menu_state["last_tri"], t1, "Touch double-tap should target t1")
+	runner.assert_eq(canvas.selected_triangle, t1, "t1 should be selected after touch double-tap")
+	canvas.context_menu.hide()
+
+	# 4. Test Tablet Screen Touch with consecutive rapid touches (<400ms)
+	canvas.select_triangle(null)
+	canvas.last_popup_trigger_time_msec = 0
+	canvas.last_touch_down_time_msec = 0
+
+	var st1_down = InputEventScreenTouch.new()
+	st1_down.index = 0
+	st1_down.pressed = true
+	st1_down.double_tap = false
+	st1_down.position = t1_click_pos
+	canvas._gui_input(st1_down)
+
+	var st1_up = InputEventScreenTouch.new()
+	st1_up.index = 0
+	st1_up.pressed = false
+	st1_up.position = t1_click_pos
+	canvas._gui_input(st1_up)
+
+	runner.assert_eq(menu_state["count"], 3, "First touch should not trigger context menu")
+
+	# Second touch slightly moved within rapid threshold
+	var st2_down = InputEventScreenTouch.new()
+	st2_down.index = 0
+	st2_down.pressed = true
+	st2_down.double_tap = false
+	st2_down.position = t1_click_pos + Vector2(6, 4)
+	canvas._gui_input(st2_down)
+
+	runner.assert_eq(menu_state["count"], 4, "Second rapid touch on tablet should trigger double-tap context menu")
+	runner.assert_eq(menu_state["last_tri"], t1, "Touch double-tap should target t1")
+	canvas.context_menu.hide()
+
+	# 5. Test Double-Click on empty canvas space does NOT open triangle context menu
+	canvas.last_popup_trigger_time_msec = 0
+	var mb_empty = InputEventMouseButton.new()
+	mb_empty.button_index = MOUSE_BUTTON_LEFT
+	mb_empty.pressed = true
+	mb_empty.double_click = true
+	mb_empty.position = Vector2(10, 10)
+	mb_empty.global_position = Vector2(10, 10)
+	canvas._gui_input(mb_empty)
+
+	runner.assert_eq(menu_state["count"], 4, "Double click on empty space should NOT trigger context menu")
+
+	# 6. Test Multi-selection double click preserves group selection
+	var t2: TriangleNode = TriangleNode.new()
+	t2.position = Vector2(500, 500)
+	t2.vertex_a = Vector2(0, -50)
+	t2.vertex_b = Vector2(-50, 40)
+	t2.vertex_c = Vector2(50, 40)
+	canvas.add_triangle_node(t2)
+
+	var sel_list: Array[TriangleNode] = [t1, t2]
+	canvas.select_triangles(sel_list)
+	runner.assert_eq(canvas.selected_triangles.size(), 2, "Both t1 and t2 should be selected")
+
+	var t2_click_pos: Vector2 = canvas.world_to_canvas(t2.position + t2.get_centroid())
+	canvas.last_popup_trigger_time_msec = 0
+	var mb_multi = InputEventMouseButton.new()
+	mb_multi.button_index = MOUSE_BUTTON_LEFT
+	mb_multi.pressed = true
+	mb_multi.double_click = true
+	mb_multi.position = t2_click_pos
+	mb_multi.global_position = t2_click_pos
+	canvas._gui_input(mb_multi)
+
+	runner.assert_eq(menu_state["count"], 5, "Double click on multi-selected triangle should open context menu")
+	runner.assert_eq(canvas.selected_triangles.size(), 2, "Multi-selection of 2 triangles must be preserved")
+
+	runner.remove_child(canvas)
+	canvas.free()

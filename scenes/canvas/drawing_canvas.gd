@@ -20,6 +20,7 @@ signal toast_requested(msg: String)
 signal zoom_changed(zoom: float)
 signal scale_lock_toggled(locked: bool)
 signal canvas_size_changed(new_size: Vector2)
+signal context_menu_opened(target_triangle: TriangleNode, global_pos: Vector2)
 
 enum MenuAction {
 	DUPLICATE = 1,
@@ -101,6 +102,20 @@ var current_group_scale_factor: float = 1.0
 
 var context_menu: PopupMenu = null
 var last_right_click_pos: Vector2 = Vector2.ZERO
+
+# Double click (mouse) and double tap (touch/tablet) detection
+const DOUBLE_CLICK_MAX_TIME_MSEC: int = 350
+const DOUBLE_CLICK_MAX_DIST: float = 20.0
+const DOUBLE_TAP_MAX_TIME_MSEC: int = 400
+const DOUBLE_TAP_MAX_DIST: float = 35.0
+
+var last_mouse_click_time_msec: int = 0
+var last_mouse_click_local_pos: Vector2 = Vector2.ZERO
+
+var last_touch_down_time_msec: int = 0
+var last_touch_down_local_pos: Vector2 = Vector2.ZERO
+
+var last_popup_trigger_time_msec: int = 0
 
 @onready var container: Node2D = $TrianglesContainer
 
@@ -829,6 +844,27 @@ func _gui_input(event: InputEvent) -> void:
 				touch_start_zoom = zoom_level
 				touch_start_mid = (p0 + p1) / 2.0
 				touch_start_pan = pan_offset
+			elif touch_points.size() == 1 and st.index == 0:
+				var local_pos: Vector2 = st.position
+				var world_pos: Vector2 = canvas_to_world(local_pos)
+				var now: int = Time.get_ticks_msec()
+				var is_double: bool = st.double_tap
+				if not is_double and last_touch_down_time_msec > 0:
+					var time_diff: int = now - last_touch_down_time_msec
+					var dist: float = local_pos.distance_to(last_touch_down_local_pos)
+					if time_diff <= DOUBLE_TAP_MAX_TIME_MSEC and dist <= DOUBLE_TAP_MAX_DIST:
+						is_double = true
+
+				if is_double:
+					var screen_pos: Vector2 = get_screen_transform() * local_pos
+					if _handle_triangle_double_action(world_pos, screen_pos):
+						last_touch_down_time_msec = 0
+						last_popup_trigger_time_msec = now
+						accept_event()
+						return
+
+				last_touch_down_time_msec = now
+				last_touch_down_local_pos = local_pos
 		else:
 			touch_points.erase(st.index)
 			if touch_points.size() < 2:
@@ -851,6 +887,9 @@ func _gui_input(event: InputEvent) -> void:
 				_apply_zoom_and_pan()
 			accept_event()
 			return
+		elif touch_points.size() == 1:
+			if sd.position.distance_to(last_touch_down_local_pos) > DOUBLE_TAP_MAX_DIST:
+				last_touch_down_time_msec = 0
 
 	if event is InputEventMouseButton:
 		var mb: InputEventMouseButton = event
@@ -893,6 +932,29 @@ func _gui_input(event: InputEvent) -> void:
 				return
 
 			if mb.pressed:
+				var now: int = Time.get_ticks_msec()
+				# Debounce check to avoid duplicate trigger when touch emulation emits both touch and mouse
+				if now - last_popup_trigger_time_msec < 250:
+					accept_event()
+					return
+
+				var is_double: bool = mb.double_click
+				if not is_double and last_mouse_click_time_msec > 0:
+					var time_diff: int = now - last_mouse_click_time_msec
+					var dist: float = local_pos.distance_to(last_mouse_click_local_pos)
+					if time_diff <= DOUBLE_CLICK_MAX_TIME_MSEC and dist <= DOUBLE_CLICK_MAX_DIST:
+						is_double = true
+
+				if is_double:
+					if _handle_triangle_double_action(world_pos, mb.global_position):
+						last_mouse_click_time_msec = 0
+						last_popup_trigger_time_msec = now
+						accept_event()
+						return
+
+				last_mouse_click_time_msec = now
+				last_mouse_click_local_pos = local_pos
+
 				_handle_mouse_press(world_pos, is_shift, local_pos)
 			else:
 				_handle_mouse_release(world_pos, local_pos)
@@ -904,6 +966,8 @@ func _gui_input(event: InputEvent) -> void:
 	elif event is InputEventMouseMotion:
 		var mm: InputEventMouseMotion = event
 		var local_pos: Vector2 = mm.position
+		if local_pos.distance_to(last_mouse_click_local_pos) > DOUBLE_CLICK_MAX_DIST:
+			last_mouse_click_time_msec = 0
 
 		if is_panning:
 			pan_offset = pan_start_offset + (local_pos - pan_start_mouse)
@@ -1090,7 +1154,56 @@ func _setup_context_menu() -> void:
 	context_menu = PopupMenu.new()
 	context_menu.name = "CanvasContextMenu"
 	context_menu.id_pressed.connect(_on_context_menu_id_pressed)
+	context_menu.add_theme_constant_override("v_separation", 6)
+	context_menu.add_theme_font_size_override("font_size", 14)
 	add_child(context_menu)
+
+func get_triangle_at_point(world_pos: Vector2) -> TriangleNode:
+	# 1. Check selected triangles first (they are highlighted and have handles)
+	for st in selected_triangles:
+		if is_instance_valid(st) and (st.hit_test_body(world_pos) or st.hit_test_handle(world_pos) != -1 or st.hit_test_rotation_handle(world_pos)):
+			return st
+	# 2. Check all triangles from top (last drawn) to bottom (first drawn)
+	for i in range(triangles.size() - 1, -1, -1):
+		var t: TriangleNode = triangles[i]
+		if is_instance_valid(t) and (t.hit_test_body(world_pos) or t.hit_test_handle(world_pos) != -1):
+			return t
+	return null
+
+func _handle_triangle_double_action(world_pos: Vector2, global_pos: Vector2) -> bool:
+	var target_tri: TriangleNode = get_triangle_at_point(world_pos)
+	if not target_tri:
+		return false
+
+	# 1. Update selection:
+	# If target is already part of the current selection, maintain it; otherwise, select it exclusively.
+	if not selected_triangles.has(target_tri):
+		select_triangle(target_tri)
+
+	# 2. Cancel and reset any drag that might have been started by the click/tap
+	if active_interacting_triangle and is_instance_valid(active_interacting_triangle):
+		if active_interacting_triangle.current_drag == TriangleNode.DragMode.BODY:
+			active_interacting_triangle.position = active_interacting_triangle.drag_start_pos
+			active_interacting_triangle.geometry_changed.emit(active_interacting_triangle)
+			active_interacting_triangle.queue_redraw()
+		active_interacting_triangle.current_drag = TriangleNode.DragMode.NONE
+		active_interacting_triangle = null
+
+	is_marquee_selecting = false
+	is_dragging_group_rotation = false
+	is_dragging_group_scale = false
+	drag_multi_start_positions.clear()
+
+	last_right_click_pos = world_pos
+
+	# 3. Audio feedback
+	if SoundManager.instance:
+		SoundManager.instance.play_click()
+
+	# 4. Display popup menu at touch/click position
+	_show_context_menu(global_pos)
+	context_menu_opened.emit(target_tri, global_pos)
+	return true
 
 func _handle_right_click(world_pos: Vector2, global_pos: Vector2) -> void:
 	last_right_click_pos = world_pos
@@ -1167,7 +1280,15 @@ func _show_context_menu(global_pos: Vector2) -> void:
 		context_menu.add_item("캔버스 전체 삭제", MenuAction.CLEAR_ALL)
 
 	context_menu.reset_size()
-	context_menu.popup(Rect2i(Vector2i(global_pos), Vector2i.ZERO))
+	var menu_size: Vector2 = context_menu.size
+	var vp_rect: Rect2 = get_viewport_rect()
+	var pos: Vector2 = global_pos
+	if vp_rect.size.x > 50 and vp_rect.size.y > 50:
+		if pos.x + menu_size.x > vp_rect.size.x:
+			pos.x = maxf(10.0, vp_rect.size.x - menu_size.x - 10.0)
+		if pos.y + menu_size.y > vp_rect.size.y:
+			pos.y = maxf(10.0, vp_rect.size.y - menu_size.y - 10.0)
+	context_menu.popup(Rect2i(Vector2i(pos), Vector2i.ZERO))
 
 func _on_context_menu_id_pressed(id: int) -> void:
 	match id:

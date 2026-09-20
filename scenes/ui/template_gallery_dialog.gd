@@ -152,12 +152,12 @@ func _create_card(meta: Dictionary) -> PanelContainer:
 	card.add_theme_stylebox_override("panel", style)
 
 	var vbox: VBoxContainer = VBoxContainer.new()
-	vbox.theme_override_constants.separation = 4
+	vbox.add_theme_constant_override("separation", 4)
 	card.add_child(vbox)
 
 	# Header row: Stage Badge + Tag + Pieces
 	var top_row: HBoxContainer = HBoxContainer.new()
-	top_row.theme_override_constants.separation = 6
+	top_row.add_theme_constant_override("separation", 6)
 	vbox.add_child(top_row)
 
 	var stage_lbl: Label = Label.new()
@@ -205,7 +205,7 @@ func _create_card(meta: Dictionary) -> PanelContainer:
 
 	# Buttons Row
 	var btn_row: HBoxContainer = HBoxContainer.new()
-	btn_row.theme_override_constants.separation = 6
+	btn_row.add_theme_constant_override("separation", 6)
 	vbox.add_child(btn_row)
 
 	# Load button
