@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://scenes/main/main.gd" id="1_main"]
 [ext_resource type="PackedScene" path="res://scenes/ui/toolbar.tscn" id="2_toolbar"]
@@ -7,6 +7,7 @@
 [ext_resource type="Theme" path="res://assets/theme/app_theme.tres" id="5_theme"]
 [ext_resource type="PackedScene" path="res://scenes/ui/template_gallery_dialog.tscn" id="6_gallery"]
 [ext_resource type="PackedScene" path="res://scenes/effects/confetti_particles.tscn" id="7_confetti"]
+[ext_resource type="PackedScene" path="res://scenes/ui/challenge_hud.tscn" id="8_challenge"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_palette_bg"]
 content_margin_left = 16.0
@@ -110,6 +111,19 @@ unique_name_in_owner = true
 visible = false
 z_index = 50
 layout_mode = 1
+
+[node name="ChallengeHUD" parent="." instance=ExtResource("8_challenge")]
+unique_name_in_owner = true
+visible = false
+z_index = 35
+layout_mode = 1
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -240.0
+offset_top = 76.0
+offset_right = 240.0
+offset_bottom = 128.0
+grow_horizontal = 2
 
 [node name="ConfettiParticles" parent="." instance=ExtResource("7_confetti")]
 unique_name_in_owner = true

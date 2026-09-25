@@ -5,6 +5,7 @@ extends Control
 ## across 3 progressive difficulty levels (초급, 중급, 고급).
 
 signal template_load_requested(template_name: String)
+signal challenge_requested(template_name: String)
 signal closed
 
 @onready var btn_close: Button = %BtnClose
@@ -243,5 +244,15 @@ func _create_card(meta: Dictionary) -> PanelContainer:
 		template_load_requested.emit(t_name)
 	)
 	btn_row.add_child(btn_load)
+
+	var btn_challenge: Button = Button.new()
+	btn_challenge.text = "도전하기"
+	btn_challenge.custom_minimum_size = Vector2(88, 28)
+	btn_challenge.tooltip_text = "빈 캔버스에서 이 도안의 실루엣에 도전합니다. 현재 작품은 실행 취소로 복원할 수 있습니다."
+	btn_challenge.pressed.connect(func():
+		visible = false
+		challenge_requested.emit(t_name)
+	)
+	btn_row.add_child(btn_challenge)
 
 	return card

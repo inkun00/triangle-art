@@ -20,15 +20,18 @@ class CreateCommand extends RefCounted:
 class DeleteCommand extends RefCounted:
 	var canvas: Node
 	var triangle: Node
+	var old_index: int
 	func _init(p_canvas: Node, p_triangle: Node) -> void:
 		canvas = p_canvas
 		triangle = p_triangle
+		old_index = canvas.get_triangle_index(triangle)
 	func execute() -> void:
 		if triangle.get_parent():
 			canvas.remove_triangle_node(triangle)
 	func undo() -> void:
 		if not triangle.get_parent():
 			canvas.add_triangle_node(triangle)
+			canvas.set_triangle_index(triangle, old_index)
 		triangle.set_selected(true)
 
 class MoveCommand extends RefCounted:
@@ -137,17 +140,62 @@ class ClearAllCommand extends RefCounted:
 class BatchDeleteCommand extends RefCounted:
 	var canvas: Node
 	var deleted_triangles: Array
+	var old_indices: Dictionary
 	func _init(p_canvas: Node, p_triangles: Array) -> void:
 		canvas = p_canvas
 		deleted_triangles = p_triangles.duplicate()
+		old_indices = {}
+		for t in deleted_triangles:
+			old_indices[t] = canvas.get_triangle_index(t)
 	func execute() -> void:
 		for t in deleted_triangles:
 			if t.get_parent():
 				canvas.remove_triangle_node(t)
 	func undo() -> void:
-		for t in deleted_triangles:
+		var ordered: Array = deleted_triangles.duplicate()
+		ordered.sort_custom(func(a: Node, b: Node) -> bool: return old_indices[a] < old_indices[b])
+		for t in ordered:
 			if not t.get_parent():
 				canvas.add_triangle_node(t)
+				canvas.set_triangle_index(t, old_indices[t])
+
+class ReplaceProjectCommand extends RefCounted:
+	var canvas: Node
+	var old_triangles: Array
+	var new_triangles: Array
+	var old_canvas_size: Vector2
+	var new_canvas_size: Vector2
+	var old_selection: Array
+
+	func _init(p_canvas: Node, p_new_triangles: Array, p_new_canvas_size: Vector2) -> void:
+		canvas = p_canvas
+		old_triangles = canvas.triangles.duplicate()
+		new_triangles = p_new_triangles.duplicate()
+		old_canvas_size = canvas.canvas_size
+		new_canvas_size = p_new_canvas_size
+		old_selection = canvas.selected_triangles.duplicate()
+
+	func execute() -> void:
+		canvas.select_triangle(null)
+		for t in old_triangles:
+			if t.get_parent():
+				canvas.remove_triangle_node(t)
+		canvas.set_canvas_size(new_canvas_size)
+		for t in new_triangles:
+			if not t.get_parent():
+				canvas.add_triangle_node(t)
+		canvas.select_triangle(null)
+
+	func undo() -> void:
+		canvas.select_triangle(null)
+		for t in new_triangles:
+			if t.get_parent():
+				canvas.remove_triangle_node(t)
+		canvas.set_canvas_size(old_canvas_size)
+		for t in old_triangles:
+			if not t.get_parent():
+				canvas.add_triangle_node(t)
+		canvas.select_triangles(old_selection)
 
 class MultiColorCommand extends RefCounted:
 	var triangles: Array
@@ -326,5 +374,4 @@ class MultiTransformVerticesCommand extends RefCounted:
 				t.vertex_c = verts[2]
 				t.geometry_changed.emit(t)
 				t.queue_redraw()
-
 

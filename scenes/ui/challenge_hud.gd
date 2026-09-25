@@ -6,6 +6,7 @@ extends PanelContainer
 
 signal challenge_closed
 signal next_challenge_requested
+signal challenge_completed(percentage: int, stars: int)
 
 @onready var lbl_title: Label = %LblTitle
 @onready var lbl_accuracy: Label = %LblAccuracy
@@ -82,3 +83,4 @@ func _trigger_victory(final_pct: int, stars: int) -> void:
 	# Play celebration sound via SoundManager
 	if SoundManager.instance:
 		SoundManager.instance.play_fanfare()
+	challenge_completed.emit(final_pct, stars)

@@ -5,6 +5,8 @@
 # Vercel & Node
 .vercel/
 node_modules/
+__pycache__/
+*.pyc
 
 # OS and Editor
 .DS_Store

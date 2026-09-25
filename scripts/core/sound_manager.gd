@@ -51,6 +51,15 @@ func _ready() -> void:
 		_players.append(p)
 	_build_all_sounds()
 
+func _exit_tree() -> void:
+	for player in _players:
+		if is_instance_valid(player):
+			player.stop()
+			player.stream = null
+	_players.clear()
+	if instance == self:
+		instance = null
+
 func _build_all_sounds() -> void:
 	_stream_snap = _build_snap_sound()
 	_stream_rotate = _build_rotate_tick_sound()

@@ -11,6 +11,8 @@ const SoundManager = preload("res://scripts/core/sound_manager.gd")
 const TriangleTemplates = preload("res://scripts/core/triangle_templates.gd")
 const TemplateGalleryDialog = preload("res://scenes/ui/template_gallery_dialog.gd")
 const ConfettiParticles = preload("res://scenes/effects/confetti_particles.gd")
+const ChallengeHUD = preload("res://scenes/ui/challenge_hud.gd")
+const PuzzleEvaluator = preload("res://scripts/core/puzzle_evaluator.gd")
 
 ## Main Game Controller uniting Canvas, Toolbar, Color Palette, SoundManager, and Template Gallery.
 
@@ -21,12 +23,21 @@ const ConfettiParticles = preload("res://scenes/effects/confetti_particles.gd")
 @onready var toast_label: Label = %ToastLabel
 @onready var gallery_dialog: TemplateGalleryDialog = %TemplateGalleryDialog
 @onready var confetti_particles: ConfettiParticles = %ConfettiParticles
+@onready var challenge_hud: ChallengeHUD = %ChallengeHUD
 
 
 var sound_manager: SoundManager = null
 var command_manager: CommandManager = CommandManager.new()
 var is_transparent_bg: bool = false
 var _color_drag_saved_colors: Dictionary = {}
+var challenge_template_name: String = ""
+var challenge_template_data: Array[Dictionary] = []
+var _challenge_updates_suspended: bool = false
+
+func _exit_tree() -> void:
+	if command_manager.state_changed.is_connected(_on_command_state_changed):
+		command_manager.state_changed.disconnect(_on_command_state_changed)
+	command_manager.clear()
 
 func _ready() -> void:
 	# 0. Initialize Procedural Sound Manager
@@ -93,6 +104,10 @@ func _ready() -> void:
 	# 5. Connect Template Gallery signals
 	if gallery_dialog:
 		gallery_dialog.template_load_requested.connect(_on_template_load_requested)
+		gallery_dialog.challenge_requested.connect(_on_challenge_requested)
+	challenge_hud.challenge_closed.connect(_end_challenge)
+	challenge_hud.next_challenge_requested.connect(_on_next_challenge_requested)
+	challenge_hud.challenge_completed.connect(_on_challenge_completed)
 
 	# 6. Responsive UI & Viewport Scaling
 	if get_tree() and get_tree().root:
@@ -185,6 +200,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
 
 func _on_command_state_changed() -> void:
 	toolbar.update_undo_redo_states(command_manager.can_undo(), command_manager.can_redo())
+	_update_challenge_progress()
 
 func _on_canvas_action_performed(cmd: Variant) -> void:
 	command_manager.push_and_execute(cmd)
@@ -196,6 +212,7 @@ func _on_canvas_selection_changed(node: TriangleNode) -> void:
 
 func _on_canvas_geometry_updated(node: TriangleNode) -> void:
 	toolbar.update_selection_state(node)
+	_update_challenge_progress()
 
 func _on_new_triangle() -> void:
 	canvas.add_new_equilateral_triangle()
@@ -235,6 +252,7 @@ func _on_clear_requested() -> void:
 	_show_toast("캔버스를 모두 비웠습니다.")
 
 func _on_template_selected(t_name: String) -> void:
+	_end_challenge()
 	canvas.load_template_triangles(t_name)
 	_show_toast("도안 불러오기 완료: " + t_name)
 
@@ -280,6 +298,10 @@ func _on_canvas_size_requested(new_size: Vector2) -> void:
 func _on_canvas_size_changed(new_size: Vector2) -> void:
 	toolbar.set_canvas_size(new_size)
 	_show_toast("캔버스 크기가 %d × %d px로 설정되었습니다." % [int(new_size.x), int(new_size.y)])
+	if not challenge_template_name.is_empty():
+		challenge_template_data = TriangleTemplates.get_template_data(challenge_template_name, new_size / 2.0)
+		canvas.set_challenge_guide(challenge_template_data)
+		_update_challenge_progress()
 
 func _on_color_preview(col: Color, is_outline: bool) -> void:
 	if is_outline:
@@ -368,8 +390,11 @@ func _on_save_project() -> void:
 			_show_toast("프로젝트 파일 저장 실패")
 
 func _on_load_project(json_str: String) -> void:
+	_challenge_updates_suspended = true
 	var success: bool = canvas.load_project_json(json_str)
+	_challenge_updates_suspended = false
 	if success:
+		_end_challenge()
 		_show_toast("프로젝트가 성공적으로 불러와졌습니다!")
 	else:
 		_show_toast("프로젝트 데이터를 읽을 수 없습니다. 올바른 포맷인지 확인해주세요.")
@@ -379,8 +404,45 @@ func _on_load_project(json_str: String) -> void:
 # -----------------------------------------------------------------------------
 
 func _on_template_load_requested(t_name: String) -> void:
+	_end_challenge()
 	canvas.load_template_triangles(t_name)
 	_show_toast("도안 불러오기 완료: " + t_name)
+
+func _on_challenge_requested(t_name: String) -> void:
+	var target: Array[Dictionary] = TriangleTemplates.get_template_data(t_name, canvas.canvas_size / 2.0)
+	if target.is_empty():
+		return
+	_end_challenge()
+	canvas.clear_all_triangles()
+	challenge_template_name = t_name
+	challenge_template_data = target
+	canvas.set_challenge_guide(target)
+	challenge_hud.set_challenge(t_name)
+	challenge_hud.visible = true
+	_update_challenge_progress()
+	_show_toast("도전 시작: " + t_name)
+
+func _update_challenge_progress() -> void:
+	if not _challenge_updates_suspended and challenge_hud and challenge_hud.visible and not challenge_template_data.is_empty():
+		challenge_hud.update_progress(PuzzleEvaluator.evaluate_accuracy(canvas.triangles, challenge_template_data))
+
+func _end_challenge() -> void:
+	challenge_template_name = ""
+	challenge_template_data.clear()
+	if canvas:
+		canvas.set_challenge_guide([])
+	if challenge_hud:
+		challenge_hud.visible = false
+
+func _on_next_challenge_requested() -> void:
+	var names: Array[String] = TriangleTemplates.get_template_names()
+	if names.is_empty():
+		return
+	var current_index: int = names.find(challenge_template_name)
+	_on_challenge_requested(names[(current_index + 1) % names.size()])
+
+func _on_challenge_completed(_percentage: int, _stars: int) -> void:
+	confetti_particles.explode(size / 2.0)
 
 func _show_toast(msg: String) -> void:
 	if not toast_label:
@@ -451,6 +513,9 @@ func _update_responsive_layout() -> void:
 	_apply_responsive_ui(compact)
 
 func _apply_responsive_ui(compact: bool) -> void:
+	if challenge_hud:
+		challenge_hud.offset_top = maxf(toolbar.size.y + 8.0, 76.0)
+		challenge_hud.offset_bottom = challenge_hud.offset_top + 52.0
 	if palette_container:
 		if compact:
 			palette_container.anchor_left = 0.0
@@ -491,4 +556,3 @@ func _apply_responsive_ui(compact: bool) -> void:
 	
 	if canvas and is_inside_tree():
 		canvas.call_deferred("fit_canvas_in_view")
-

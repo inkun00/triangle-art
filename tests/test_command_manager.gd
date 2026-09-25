@@ -4,6 +4,7 @@ extends RefCounted
 ## Unit tests for CommandManager Undo/Redo
 
 const CommandManager = preload("res://scripts/core/command_manager.gd")
+const TriangleNode = preload("res://scenes/triangle/triangle_node.gd")
 
 class DummyCommand extends RefCounted:
 	var target_val: Array
@@ -20,6 +21,65 @@ static func run(runner) -> void:
 	test_undo_redo_flow(runner)
 	test_multi_color_command_undo_redo(runner)
 	test_multi_outline_color_command_undo_redo(runner)
+	test_delete_restores_layer_and_releases_history(runner)
+	test_batch_delete_restores_sparse_layers(runner)
+
+static func test_batch_delete_restores_sparse_layers(runner) -> void:
+	var canvas = load("res://scenes/canvas/drawing_canvas.tscn").instantiate()
+	runner.add_child(canvas)
+	var mgr = CommandManager.new()
+	canvas.action_performed.connect(func(cmd): mgr.push_and_execute(cmd))
+	var a = TriangleNode.new()
+	var b = TriangleNode.new()
+	var c = TriangleNode.new()
+	var d = TriangleNode.new()
+	for triangle in [a, b, c, d]:
+		canvas.add_triangle_node(triangle)
+	var selected: Array[TriangleNode] = [a, c]
+	canvas.select_triangles(selected)
+	canvas.delete_selected()
+	runner.assert_eq(canvas.triangles, [b, d], "Batch delete preserves remaining layers")
+	mgr.undo()
+	runner.assert_eq(canvas.triangles, [a, b, c, d], "Batch undo restores nonadjacent layers")
+	mgr.clear()
+	runner.remove_child(canvas)
+	canvas.free()
+
+static func test_delete_restores_layer_and_releases_history(runner) -> void:
+	var canvas = load("res://scenes/canvas/drawing_canvas.tscn").instantiate()
+	runner.add_child(canvas)
+	var mgr = CommandManager.new()
+	canvas.action_performed.connect(func(cmd): mgr.push_and_execute(cmd))
+	var first = TriangleNode.new()
+	var middle = TriangleNode.new()
+	var last = TriangleNode.new()
+	canvas.add_triangle_node(first)
+	canvas.add_triangle_node(middle)
+	canvas.add_triangle_node(last)
+	canvas.select_triangle(middle)
+	canvas.delete_selected()
+	runner.assert_eq(canvas.triangles, [first, last], "Deleting middle triangle preserves remaining layer order")
+	mgr.undo()
+	runner.assert_eq(canvas.triangles, [first, middle, last], "Undo restores the original layer order")
+	mgr.redo()
+	runner.assert_eq(canvas.triangles, [first, last], "Redo removes the same triangle")
+	mgr.clear()
+	runner.assert_false(is_instance_valid(middle), "Clearing history frees a detached deleted triangle")
+	var created = canvas.add_new_equilateral_triangle()
+	mgr.undo()
+	runner.assert_true(is_instance_valid(created), "Undone creation remains available for redo")
+	mgr.clear()
+	runner.assert_false(is_instance_valid(created), "Clearing redo history frees an undone creation")
+	var pruned = canvas.add_new_equilateral_triangle()
+	mgr.max_history = 1
+	canvas.delete_selected()
+	runner.assert_true(is_instance_valid(pruned), "Pruning create history keeps a node referenced by delete")
+	var arr: Array = []
+	mgr.push_and_execute(DummyCommand.new(arr, 1))
+	runner.assert_false(is_instance_valid(pruned), "Pruning final delete reference frees detached node")
+	mgr.clear()
+	runner.remove_child(canvas)
+	canvas.free()
 
 static func test_multi_color_command_undo_redo(runner) -> void:
 	var TriangleCommands = preload("res://scripts/core/triangle_commands.gd")

@@ -16,12 +16,12 @@
 - **자석 정점 스냅 (Magnetic Snap)**: 인접한 삼각형의 정점에 마우스가 다가가면 부드럽게 결합되는 스냅 효과.
 - **15° 회전 스냅 & 각도 피드백**: 최상단 꼭짓점 앵커 기반 회전 핸들과 모서리 회전 영역 지원.
 - **다중 선택 & 그룹화 (`Ctrl+G`)**: 여러 삼각형을 한 묶음으로 묶어 일체화 회전 및 크기 조절.
-- **무제한 실행 취소/다시 실행 (Undo/Redo, `Ctrl+Z`, `Ctrl+Y`)**: 모든 조작에 커맨드 패턴 적용.
+- **최근 60개 작업 실행 취소/다시 실행 (Undo/Redo, `Ctrl+Z`, `Ctrl+Y`)**: 편집 작업을 커맨드 패턴으로 기록.
 
 ### 2. 퍼즐 챌린지 모드 (Puzzle Challenge Mode)
-- **실시간 일치도 평가기 (`PuzzleEvaluator`)**: 실루엣 목표 도안과 플레이어가 배치한 도형 간의 면적 중첩도를 실시간(0~100%) 평가.
+- **실시간 일치도 평가기 (`PuzzleEvaluator`)**: 도안의 실루엣을 샘플링해 플레이어가 배치한 삼각형과의 일치도를 0~100%로 평가. 도안 갤러리의 **도전하기** 버튼으로 시작.
 - **3-Star 레이팅 & 클리어 연출**: 90% 이상 일치 시 황금 승리 배너, 축하 팡파레, 80여 개의 물리 기반 삼각 컨페티 파티클 폭죽 발사!
-- **8종 창의 도안 라이브러리**: 나비, 여우, 산과 해, 우주선, 집, 보트, 하트, 풍차.
+- **30종 도안 라이브러리**: 초급·중급·고급 각 10종.
 
 ### 3. 상용 인디 게임급 프리미엄 UI / UX
 - **다크 글래스모피즘 캡슐 HUD**: 모뉴먼트 밸리(Monument Valley) & 타운스케이퍼(Townscaper) 감성의 미려한 반투명 플로팅 HUD.
@@ -56,13 +56,19 @@ powershell -File tools/run_tests.ps1
 ```
 
 ### 빌드 및 배포
+웹 빌드에는 Python과 `fontTools`가 필요합니다. 폰트 원본은 `tools/font_sources/korean_font_full.ttf.bin`에 보관되며, 빌드할 때 화면 문구에 필요한 글자만 추려 웹 패키지에 넣습니다.
+
 ```powershell
+python -m pip install -r tools/requirements-font.txt
+
 # 웹 빌드 내보내기
 powershell -File tools/export_web.ps1
 
 # 윈도우 독립형 패키지 내보내기
 powershell -File tools/export_desktop.ps1
 ```
+
+웹 내보내기는 Godot 리소스를 다시 가져온 뒤 파일 내용에 따라 WASM·PCK·스크립트의 이름을 정합니다. `vercel.json`은 이 파일들에 장기 캐시를 적용합니다. 새 빌드를 배포할 때는 `build/web/index.html`과 이름이 바뀐 파일들을 함께 배포해야 합니다.
 
 ---
 

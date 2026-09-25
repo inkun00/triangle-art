@@ -9,8 +9,21 @@ if (-not (Test-Path $GodotExe)) {
 }
 
 Write-Host "Running Godot Headless Test Runner..." -ForegroundColor Cyan
-& $GodotExe --headless --path . "res://tests/test_runner.tscn"
-$exitCode = $LASTEXITCODE
+$stdoutPath = Join-Path ([System.IO.Path]::GetTempPath()) ([System.IO.Path]::GetRandomFileName())
+$stderrPath = Join-Path ([System.IO.Path]::GetTempPath()) ([System.IO.Path]::GetRandomFileName())
+try {
+    $process = Start-Process -FilePath $GodotExe -ArgumentList @("--headless", "--path", ".", "res://tests/test_runner.tscn") -WorkingDirectory (Get-Location).Path -WindowStyle Hidden -RedirectStandardOutput $stdoutPath -RedirectStandardError $stderrPath -Wait -PassThru
+    $exitCode = $process.ExitCode
+    $testOutput = @(Get-Content -LiteralPath $stdoutPath -Encoding UTF8) + @(Get-Content -LiteralPath $stderrPath -Encoding UTF8)
+} finally {
+    Remove-Item -LiteralPath $stdoutPath, $stderrPath -ErrorAction SilentlyContinue
+}
+$testOutput | ForEach-Object { Write-Host "$_" }
+$engineProblems = @($testOutput | Where-Object { "$($_)".TrimStart() -match '^(SCRIPT ERROR|ERROR|WARNING):' })
+if ($engineProblems.Count -gt 0) {
+    Write-Error "Godot reported $($engineProblems.Count) runtime error(s) or warning(s)."
+    exit 1
+}
 
 if ($exitCode -eq 0) {
     Write-Host "`nAll tests passed successfully!" -ForegroundColor Green

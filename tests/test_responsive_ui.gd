@@ -82,5 +82,17 @@ static func test_main_responsive_modes(runner) -> void:
 	if main.palette.buttons.size() > 0:
 		runner.assert_eq(main.palette.buttons[0].custom_minimum_size, Vector2(26, 26), "Swatches should restore desktop size")
 
+	main.sound_manager.sound_enabled = false
+	main._on_challenge_requested("물고기 (Fish)")
+	runner.assert_true(main.challenge_hud.visible, "Starting a challenge displays its HUD")
+	runner.assert_eq(main.challenge_hud.current_template_name, "물고기 (Fish)", "Challenge uses the chosen template")
+	runner.assert_eq(main.canvas.triangles.size(), 0, "Challenge begins with an empty canvas")
+	runner.assert_gt(main.canvas.challenge_guide.size(), 0, "Challenge displays a target guide")
+	main.canvas.load_template_triangles("물고기 (Fish)")
+	runner.assert_true(main.challenge_hud.is_completed, "Matching the target completes the challenge")
+	main._end_challenge()
+	runner.assert_false(main.challenge_hud.visible, "Closing the challenge hides the HUD")
+	runner.assert_eq(main.canvas.challenge_guide.size(), 0, "Closing the challenge clears the guide")
+
 	runner.remove_child(main)
-	main.queue_free()
+	main.free()

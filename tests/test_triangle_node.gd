@@ -385,6 +385,29 @@ static func test_project_save_and_load_v2(runner) -> void:
 	runner.assert_eq(restored_t1.outline_width, 4.0, "Triangle 1 outline_width restored")
 	runner.assert_eq(restored_t2.outline_width, 3.0, "Triangle 2 outline_width restored")
 
+	mgr.undo()
+	runner.assert_eq(canvas.triangles.size(), 0, "One undo reverses the whole project load")
+	runner.assert_eq(canvas.canvas_size, Vector2(800, 600), "Undo restores the previous canvas size")
+	mgr.redo()
+	runner.assert_eq(canvas.triangles.size(), 2, "Redo restores the loaded project")
+	runner.assert_eq(canvas.canvas_size, Vector2(1080, 1080), "Redo restores the loaded canvas size")
+
+	var invalid_data: Dictionary = JSON.parse_string(json_str)
+	var invalid_triangles: Array = invalid_data["triangles"]
+	var invalid_triangle: Dictionary = invalid_triangles[0]
+	invalid_triangle["ax"] = 0
+	invalid_triangle["ay"] = 0
+	invalid_triangle["bx"] = 10
+	invalid_triangle["by"] = 0
+	invalid_triangle["cx"] = 20
+	invalid_triangle["cy"] = 0
+	runner.assert_false(canvas.load_project_json(JSON.stringify(invalid_data)), "Collinear project triangle must be rejected")
+	runner.assert_eq(canvas.triangles.size(), 2, "Invalid project leaves artwork untouched")
+	runner.assert_eq(canvas.canvas_size, Vector2(1080, 1080), "Invalid project leaves canvas size untouched")
+	invalid_triangle["ax"] = "not a number"
+	runner.assert_false(canvas.load_project_json(JSON.stringify(invalid_data)), "Non-numeric project coordinates must be rejected")
+	mgr.clear()
+
 	runner.remove_child(canvas)
 	canvas.free()
 
